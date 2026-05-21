@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import {
+  getRequestHostnameFromHeaders,
+  isPlatformHostname,
+  isPreviewHostname,
+} from "@/lib/hostnames";
 
 export const metadata: Metadata = {
   icons: {
@@ -9,7 +15,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const hostname = await getRequestHostnameFromHeaders();
+  if (!isPlatformHostname(hostname) && !isPreviewHostname(hostname)) {
+    redirect("/");
+  }
+
   return children;
 }
-
