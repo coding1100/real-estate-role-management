@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 import {
   getAdminUiSettings,
   updateAdminUiSettings,
@@ -12,11 +14,17 @@ import {
 } from "@/lib/types/ctaForwarding";
 
 export async function GET() {
+  const auth = await apiRequirePermission(PERMISSIONS.SETTINGS_GLOBAL_READ);
+  if (auth instanceof NextResponse) return auth;
+
   const { settings, theme } = await getAdminUiSettings();
   return NextResponse.json({ settings, theme });
 }
 
 export async function PATCH(req: NextRequest) {
+  const auth = await apiRequirePermission(PERMISSIONS.SETTINGS_GLOBAL_WRITE);
+  if (auth instanceof NextResponse) return auth;
+
   const body = (await req.json().catch(() => ({}))) as Partial<{
     toastSuccessBg: string;
     toastSuccessText: string;

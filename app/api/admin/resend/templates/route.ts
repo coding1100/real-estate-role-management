@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -10,10 +11,8 @@ type TemplateSummary = {
 };
 
 export async function GET() {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(PERMISSIONS.INTEGRATIONS_RESEND_TEMPLATES);
+  if (auth instanceof NextResponse) return auth;
 
   if (!RESEND_API_KEY) {
     return NextResponse.json({

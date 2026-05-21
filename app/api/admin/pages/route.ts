@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const contentType = req.headers.get("content-type") ?? "";
   let body: Record<string, unknown>;
   if (contentType.includes("application/json")) {
@@ -62,6 +58,11 @@ export async function POST(req: NextRequest) {
   }
 
   const domainIdStr = domainId != null ? String(domainId) : "";
+  const auth = await apiRequirePermission(PERMISSIONS.PAGES_CREATE, {
+    domainId: domainIdStr || undefined,
+  });
+  if (auth instanceof NextResponse) return auth;
+
   if (!domainIdStr || !slug || !type || !masterTemplateId || !headline) {
     return NextResponse.json(
       { error: "Missing required fields" },

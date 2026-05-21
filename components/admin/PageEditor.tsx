@@ -37,8 +37,11 @@ import {
 import { useAdminToast } from "@/components/admin/useAdminToast";
 import type { CtaForwardingRule } from "@/lib/types/ctaForwarding";
 import { buildCustomerSiteUrl } from "@/lib/customerSiteUrl";
+import { useCan } from "@/components/admin/AuthContext";
+import { PERMISSIONS } from "@/lib/permissions";
 
 interface PageEditorProps {
+  readOnly?: boolean;
   initialPage: LandingPageContent & {
     dbId: string;
     domainId: string;
@@ -157,6 +160,7 @@ function deriveSlugFromCanonicalUrl(canonicalUrl: string): string | null {
 }
 
 export function PageEditor({
+  readOnly = false,
   initialPage,
   editorFonts,
   initialCtaForwardingRules = [],
@@ -165,6 +169,15 @@ export function PageEditor({
   const [tab, setTab] = useState<Tab>("content");
   const [page, setPage] = useState(initialPage);
   const [status, setStatus] = useState<string>(initialPage.status ?? "draft");
+  const pageStatus = status === "published" ? "published" : "draft";
+  const domainId = initialPage.domainId;
+  const canEditContent = useCan(PERMISSIONS.PAGES_EDIT_CONTENT, {
+    domainId,
+    pageStatus,
+  });
+  const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH, { domainId, pageStatus });
+  const canViewDraft = useCan(PERMISSIONS.PAGES_VIEW_DRAFT, { domainId, pageStatus });
+  const isReadOnly = readOnly || !canEditContent;
   const [multistepStepSlugs, setMultistepStepSlugs] = useState<string[]>(
     Array.isArray(initialPage.multistepStepSlugs) ? initialPage.multistepStepSlugs : [],
   );
@@ -344,7 +357,7 @@ export function PageEditor({
     nextStatus?: "draft" | "published",
     action: "save-draft" | "unpublish" | "publish" = "save-draft",
   ) {
-    if (saving) return;
+    if (isReadOnly || saving) return;
     setMessage(null);
     setActiveSaveAction(action);
     startSaving(async () => {
@@ -615,6 +628,7 @@ export function PageEditor({
             {status === "published" ? "Published" : "Draft"}
           </span>
           <div className="flex flex-wrap items-center gap-2 text-sm">
+            {canViewDraft ? (
             <button
               type="button"
               onClick={() => {
@@ -633,6 +647,7 @@ export function PageEditor({
               <Eye className="h-3.5 w-3.5" />
               View draft
             </button>
+            ) : null}
             <button
               type="button"
               disabled={status !== "published"}
@@ -657,6 +672,7 @@ export function PageEditor({
               <ExternalLink className="h-3.5 w-3.5" />
               View live
             </button>
+            {!isReadOnly && canPublish ? (
             <button
               type="button"
               onClick={() => save(undefined, "save-draft")}
@@ -666,6 +682,8 @@ export function PageEditor({
               <Save className="h-3.5 w-3.5" />
               {saving && activeSaveAction === "save-draft" ? "Saving..." : "Save draft"}
             </button>
+            ) : null}
+            {!isReadOnly && canPublish ? (
             <button
               type="button"
               onClick={() => save("draft", "unpublish")}
@@ -682,6 +700,8 @@ export function PageEditor({
               <EyeOff className="h-3.5 w-3.5" />
               {saving && activeSaveAction === "unpublish" ? "Unpublishing..." : "Unpublish"}
             </button>
+            ) : null}
+            {!isReadOnly && canPublish ? (
             <button
               type="button"
               onClick={() => save("published", "publish")}
@@ -691,6 +711,10 @@ export function PageEditor({
               <Globe2 className="h-3.5 w-3.5" />
               {saving && activeSaveAction === "publish" ? "Publishing..." : "Publish"}
             </button>
+            ) : null}
+            {isReadOnly ? (
+              <span className="text-xs text-zinc-500">Read-only access</span>
+            ) : null}
           </div>
         </div>
       </div>

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(PERMISSIONS.CACHE_REVALIDATE);
+  if (auth instanceof NextResponse) return auth;
 
   const { domain, slug } = await req.json();
   if (!domain || !slug) {

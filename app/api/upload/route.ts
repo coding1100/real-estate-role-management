@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cloudinary } from "@/lib/cloudinary";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const ALLOWED_DOCUMENT_EXTENSIONS = new Set(["pdf", "doc", "docx"]);
 const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
@@ -17,12 +18,16 @@ function isAllowedDocumentFile(file: File): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const formData = await req.formData();
+  const domainIdRaw = formData.get("domainId");
+  const domainId =
+    typeof domainIdRaw === "string" && domainIdRaw.trim()
+      ? domainIdRaw.trim()
+      : undefined;
+  const auth = await apiRequirePermission(PERMISSIONS.MEDIA_UPLOAD, {
+    domainId,
+  });
+  if (auth instanceof NextResponse) return auth;
   const file = formData.get("file");
 
   if (!(file instanceof File)) {

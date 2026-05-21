@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 import { Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   let body: { domainId?: unknown; pageIds?: unknown };
   try {
     body = await req.json();
@@ -18,6 +14,11 @@ export async function POST(req: NextRequest) {
 
   const domainId =
     typeof body.domainId === "string" ? body.domainId.trim() : "";
+  const auth = await apiRequirePermission(PERMISSIONS.PAGES_REORDER, {
+    domainId: domainId || undefined,
+  });
+  if (auth instanceof NextResponse) return auth;
+
   const pageIds = body.pageIds;
   if (!domainId) {
     return NextResponse.json(

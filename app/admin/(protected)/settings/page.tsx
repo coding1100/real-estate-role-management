@@ -1,8 +1,15 @@
+import { redirect } from "next/navigation";
 import { getAdminUiSettings } from "@/lib/uiSettings";
 import { ToastSettingsForm } from "@/components/admin/ToastSettingsForm";
 import { EditorFontSettingsForm } from "@/components/admin/EditorFontSettingsForm";
+import { can, getAuthContext } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export default async function AdminSettingsPage() {
+  const ctx = await getAuthContext();
+  if (!ctx || !can(ctx, PERMISSIONS.SETTINGS_GLOBAL_READ)) {
+    redirect("/admin");
+  }
   const { theme, editorFonts } = await getAdminUiSettings();
 
   return (

@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import type { PageListItem } from "@/components/admin/pageListTypes";
 import { getFixedHomepagePageIds } from "@/lib/defaultHomepage";
+import {
+  getAccessibleDomainIds,
+  landingPagesListWhere,
+  type AuthContext,
+} from "@/lib/authorization";
 
 export type PageOption = {
   id: string;
@@ -18,9 +23,24 @@ export type LandingPagesListData = {
   templates: { id: string; type: string; name: string }[];
 };
 
-export async function loadLandingPagesList(): Promise<LandingPagesListData> {
+export async function loadLandingPagesList(
+  ctx?: AuthContext,
+  mode: "active" | "archived" = "active",
+): Promise<LandingPagesListData> {
   const fixedHomepageIds = await getFixedHomepagePageIds();
+  let listWhere: Record<string, unknown>;
+  if (mode === "archived") {
+    const domainIds = ctx ? await getAccessibleDomainIds(ctx) : undefined;
+    listWhere = {
+      domain: { tenantId: ctx?.tenantId ?? "" },
+      deletedAt: { not: null },
+      ...(domainIds?.length ? { domainId: { in: domainIds } } : {}),
+    };
+  } else {
+    listWhere = ctx ? landingPagesListWhere(ctx) : { deletedAt: null };
+  }
   const pages = await prisma.landingPage.findMany({
+    where: listWhere,
     include: { domain: true },
     orderBy: [{ domain: { hostname: "asc" } }, { slug: "asc" }],
   });
@@ -88,8 +108,14 @@ export async function loadLandingPagesList(): Promise<LandingPagesListData> {
 
   let domains: { id: string; hostname: string }[] = [];
   try {
+    const accessibleIds = ctx
+      ? await getAccessibleDomainIds(ctx)
+      : undefined;
     domains = await prisma.domain.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(accessibleIds ? { id: { in: accessibleIds } } : {}),
+      },
       orderBy: { hostname: "asc" },
       select: { id: true, hostname: true },
     });

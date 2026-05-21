@@ -42,6 +42,8 @@ import { PageRowActions } from "@/components/admin/PageRowActions";
 import { useAdminToast } from "@/components/admin/useAdminToast";
 import type { PageListItem } from "@/components/admin/pageListTypes";
 import { getPageCategoryLabel } from "@/lib/admin/pageCategoryLabel";
+import { useCan } from "@/components/admin/AuthContext";
+import { PERMISSIONS } from "@/lib/permissions";
 
 type Props = {
   pages: PageListItem[];
@@ -381,6 +383,7 @@ export function LandingPagesV2Client({
   templates,
   pageOptions,
 }: Props) {
+  const canCreatePage = useCan(PERMISSIONS.PAGES_CREATE);
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -709,7 +712,7 @@ export function LandingPagesV2Client({
           >
             <HelpCircle className="h-6 w-6" />
           </button>
-          {viewMode !== "archived" ? (
+          {viewMode !== "archived" && canCreatePage ? (
             <AddPageDialog
               domains={domains}
               templates={templates}

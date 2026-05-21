@@ -1,4 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { can, getAuthContext } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { PageEditor } from "@/components/admin/PageEditor";
 import {
@@ -59,6 +61,34 @@ export default async function EditPage({ params }: EditPageProps) {
   if (!page || !page.domain) {
     notFound();
   }
+
+  const ctx = await getAuthContext();
+  const pageStatus = page.status === "published" ? "published" : "draft";
+  const domainId = page.domainId;
+
+  if (!ctx) {
+    redirect("/admin/login");
+  }
+
+  const canView =
+    (pageStatus === "published" &&
+      can(ctx, PERMISSIONS.PAGES_VIEW_LIVE, { domainId, pageStatus })) ||
+    (pageStatus === "draft" &&
+      can(ctx, PERMISSIONS.PAGES_VIEW_DRAFT, { domainId, pageStatus }));
+
+  if (!canView) {
+    redirect("/admin/pages-2");
+  }
+
+  if (
+    pageStatus === "draft" &&
+    !can(ctx, PERMISSIONS.PAGES_EDIT_CONTENT, { domainId, pageStatus })
+  ) {
+    redirect("/admin/pages-2");
+  }
+
+  const readOnly =
+    !can(ctx, PERMISSIONS.PAGES_EDIT_CONTENT, { domainId, pageStatus });
 
   const domain = page.domain;
   const fixedDefaultHomepage = await safePrismaRead(
@@ -178,6 +208,7 @@ export default async function EditPage({ params }: EditPageProps) {
 
   return (
     <PageEditor
+      readOnly={readOnly}
       initialPage={pageContent}
       editorFonts={getEnabledEditorFonts(editorFonts)}
       initialCtaForwardingRules={initialCtaForwardingRules}

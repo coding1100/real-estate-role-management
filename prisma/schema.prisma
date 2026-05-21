@@ -8,19 +8,113 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AdminDomainRole {
+  admin
+  executive
+  member
+  explorer
+}
+
+model ClientTenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  domains   Domain[]
+  roles     TenantRole[]
+  members   TenantMembership[]
+}
+
+model TenantRole {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  slug        String
+  description String?
+  builtInKey  String?
+  isBuiltIn   Boolean  @default(false)
+  permissions String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      ClientTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  allDomainsMembers TenantMembership[] @relation("AllDomainsRole")
+  domainAccess      TenantUserDomainAccess[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model TenantMembership {
+  id               String   @id @default(uuid())
+  tenantId         String
+  userId           String
+  allDomainsRoleId String?
+  isTenantAdmin    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  tenant           ClientTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user             AdminUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allDomainsRole   TenantRole?  @relation("AllDomainsRole", fields: [allDomainsRoleId], references: [id], onDelete: SetNull)
+  domainAccess     TenantUserDomainAccess[]
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+model TenantUserDomainAccess {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  domainId  String
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  membership TenantMembership @relation(fields: [tenantId, userId], references: [tenantId, userId], onDelete: Cascade)
+  domain     Domain           @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  role       TenantRole       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, domainId])
+  @@index([tenantId])
+  @@index([domainId])
+}
+
 model AdminUser {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         String   @default("admin")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String            @id @default(uuid())
+  email           String            @unique
+  passwordHash    String
+  name            String
+  role            String            @default("admin")
+  isPlatformAdmin Boolean           @default(false)
+  allDomainsRole  AdminDomainRole?
+  createdById     String?
+  createdBy       AdminUser?        @relation("AdminUserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers    AdminUser[]       @relation("AdminUserCreatedBy")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  domainAccess    AdminUserDomainAccess[]
+  tenantMemberships TenantMembership[]
+}
+
+model AdminUserDomainAccess {
+  id        String          @id @default(uuid())
+  userId    String
+  domainId  String
+  role      AdminDomainRole
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      AdminUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain    Domain          @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, domainId])
+  @@index([domainId])
 }
 
 model Domain {
   id                      String   @id @default(uuid())
-  hostname                String   @unique
+  tenantId                String
+  hostname                String
   displayName             String
   logoUrl                 String?
   faviconUrl              String?
@@ -37,7 +131,6 @@ model Domain {
   defaultBuyerFormSchema  Json?
   defaultSellerFormSchema Json?
   isActive                Boolean  @default(true)
-  // Social media links (shown under forms)
   linkedinUrl             String?
   linkedinVisible         Boolean  @default(true)
   googleUrl               String?
@@ -50,12 +143,18 @@ model Domain {
   zillowVisible           Boolean  @default(true)
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+  tenant                  ClientTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   pages                   LandingPage[]
   defaultHomepagePageId   String?
   defaultHomepageButtonLimit Int @default(9)
   defaultHomepageButtons  Json?
   defaultHomepagePage     LandingPage? @relation("DomainDefaultHomepage", fields: [defaultHomepagePageId], references: [id], onDelete: SetNull)
   leads                   Lead[]
+  adminAccess             AdminUserDomainAccess[]
+  tenantUserAccess        TenantUserDomainAccess[]
+
+  @@unique([tenantId, hostname])
+  @@index([tenantId])
 }
 
 model MasterTemplate {
@@ -83,10 +182,7 @@ model LandingPage {
   deletedBy        String?
   archivedSlug     String?
   bookmarked       Boolean  @default(false)
-  /// Sort order within /admin/pages for a given domain (drag-and-drop).
   adminListOrder   Int      @default(0)
-
-  // Content
   title          String?
   headline       String
   subheadline    String?
@@ -97,21 +193,12 @@ model LandingPage {
   deliverableUrl String?
   footerHtml     String?
   notes          String?
-
-  // Form
   useCustomForm Boolean @default(false)
   formSchema    Json?
-
-  // Multistep: entry page lists slugs for step content (e.g. ["market-report-1", "market-report-2", "market-report-3"])
   multistepStepSlugs Json?
-  /// When true and this page is used as a multistep step, Continue sends CTA notify emails for this page before advancing.
   multistepNotifyEachStep Boolean @default(false)
-
-  // Branding overrides
   primaryColor String?
   accentColor  String?
-
-  // SEO — editable from admin
   seoTitle       String?
   seoDescription String?
   seoKeywords    Json?
@@ -122,7 +209,6 @@ model LandingPage {
   noIndex        Boolean  @default(false)
   schemaMarkup   Json?
   customHeadTags Json?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   leads     Lead[]
@@ -136,11 +222,7 @@ model PageLayout {
   id        String   @id @default(uuid())
   pageId    String   @unique
   page      LandingPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  
-  // Layout configuration for each container
-  // Array of layout items with x, y, w, h, i (container id), minW, minH, etc.
   layoutData Json
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -173,7 +255,6 @@ model WebhookConfig {
 }
 
 model AdminUiSettings {
-  /// Singleton row for global admin / UI settings (including toast design).
   id               String   @id @default("singleton")
   toastSuccessBg    String   @default("#ecfdf3")
   toastSuccessText  String   @default("#166534")
@@ -190,10 +271,7 @@ model AdminUiSettings {
   toastErrorBody    String   @default("Please try again.")
   toastAlertTitle   String   @default("Attention")
   toastAlertBody    String   @default("Please review this information.")
-  /// Optional configuration for editor fonts (array of { label, cssFamily } objects)
   editorFonts       Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
-
-

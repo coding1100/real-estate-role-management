@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 function slugify(value: string): string {
   return value
@@ -12,10 +13,10 @@ function slugify(value: string): string {
 }
 
 export async function POST(_req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(
+    PERMISSIONS.DOMAIN_DEFAULT_HOMEPAGE_BACKFILL,
+  );
+  if (auth instanceof NextResponse) return auth;
 
   const sourceDomain = await prisma.domain.findFirst({
     where: { hostname: "bendhomeforsale.us" },

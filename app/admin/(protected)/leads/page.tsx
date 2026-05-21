@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { safePrismaRead } from "@/lib/prismaRetry";
+import { can, getAccessibleDomainIds, getAuthContext } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 
 interface LeadRow {
   id: string;
@@ -11,10 +14,17 @@ interface LeadRow {
 }
 
 export default async function LeadsPage() {
+  const ctx = await getAuthContext();
+  if (!ctx || !can(ctx, PERMISSIONS.LEADS_LIST)) {
+    redirect("/admin");
+  }
+  const accessibleIds = await getAccessibleDomainIds(ctx);
+
   const leads = (await safePrismaRead(
     "leads:lead.findMany",
     () =>
       prisma.lead.findMany({
+        where: { domainId: { in: accessibleIds } },
         include: { domain: true, page: true },
         orderBy: { createdAt: "desc" },
         take: 100,

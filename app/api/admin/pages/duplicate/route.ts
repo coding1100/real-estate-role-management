@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 function normalizeSlugCandidate(input: string): string {
   return input
@@ -34,11 +35,6 @@ function resolveDuplicateBaseSlug(original: { slug: string; canonicalUrl: string
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const contentType = req.headers.get("content-type") ?? "";
   let pageId: string | null = null;
   let targetDomainId: string | null = null;
@@ -112,6 +108,11 @@ export async function POST(req: NextRequest) {
   }
 
   const domainIdToUse = targetDomainId ?? original.domainId;
+  const auth = await apiRequirePermission(PERMISSIONS.PAGES_DUPLICATE, {
+    domainId: domainIdToUse,
+  });
+  if (auth instanceof NextResponse) return auth;
+
   const targetDomain = await prisma.domain.findUnique({
     where: { id: domainIdToUse },
     select: { hostname: true },

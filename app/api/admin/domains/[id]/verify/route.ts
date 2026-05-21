@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 import {
   getDomainConnectionStatus,
   verifyProjectDomain,
@@ -14,12 +15,9 @@ type RouteContext = {
 };
 
 export async function POST(_req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { id } = await ctx.params;
+  const auth = await apiRequirePermission(PERMISSIONS.DOMAIN_VERIFY, { domainId: id });
+  if (auth instanceof NextResponse) return auth;
   let domain;
   try {
     domain = await prisma.domain.findUnique({ where: { id } });

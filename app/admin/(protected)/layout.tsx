@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import {
+  loadUserAccess,
+  listUserTenants,
+  resolveActiveTenantId,
+} from "@/lib/authorization";
+import { AuthProvider } from "@/components/admin/AuthContext";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { getAdminUiSettings } from "@/lib/uiSettings";
 import { prisma } from "@/lib/prisma";
@@ -21,7 +27,20 @@ export default async function AdminProtectedLayout({
   children: ReactNode;
 }) {
   const session = await getServerAuthSession();
-  if (!session) {
+  if (!session?.user?.id) {
+    redirect("/admin/login");
+  }
+
+  const tenantId = await resolveActiveTenantId(
+    session.user.id,
+    session.user?.activeTenantId ?? null,
+  );
+  if (!tenantId) {
+    redirect("/admin/login");
+  }
+
+  const authContext = await loadUserAccess(session.user.id, tenantId);
+  if (!authContext) {
     redirect("/admin/login");
   }
 
@@ -44,14 +63,18 @@ export default async function AdminProtectedLayout({
     archivedCount = 0;
   }
 
+  const tenants = await listUserTenants(session.user.id);
+
   return (
-    <AdminShell
-      userEmail={session.user?.email}
-      toastTheme={adminToastTheme}
-      archivedWithLeadsCount={archivedCount}
-    >
-      {children}
-    </AdminShell>
+    <AuthProvider value={authContext}>
+      <AdminShell
+        userEmail={session.user?.email}
+        toastTheme={adminToastTheme}
+        archivedWithLeadsCount={archivedCount}
+      >
+        {children}
+      </AdminShell>
+    </AuthProvider>
   );
 }
 

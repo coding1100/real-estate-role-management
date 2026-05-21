@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { getAccessibleDomainIds } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 
 function resolveAdminDisplaySlug(input: {
   slug: string;
@@ -25,11 +27,6 @@ function resolveAdminDisplaySlug(input: {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(req.url);
   const domainId = searchParams.get("domainId");
   if (!domainId) {
@@ -37,6 +34,16 @@ export async function GET(req: NextRequest) {
       { error: "Missing domainId query parameter" },
       { status: 400 },
     );
+  }
+
+  const auth = await apiRequirePermission(PERMISSIONS.PAGES_MULTISTEP_PICKER, {
+    domainId,
+  });
+  if (auth instanceof NextResponse) return auth;
+
+  const accessible = await getAccessibleDomainIds(auth);
+  if (!accessible.includes(domainId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {

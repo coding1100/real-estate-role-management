@@ -1,8 +1,17 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DomainsManager } from "@/components/admin/DomainsManager";
 import { safePrismaRead, withPrismaRetry } from "@/lib/prismaRetry";
+import { can, getAccessibleDomainIds, getAuthContext } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export default async function DomainsPage() {
+  const ctx = await getAuthContext();
+  if (!ctx || !can(ctx, PERMISSIONS.DOMAIN_LIST)) {
+    redirect("/admin");
+  }
+
+  const accessibleIds = await getAccessibleDomainIds(ctx);
   const resolveDisplayPath = (slug: string, canonicalUrl: string | null): string => {
     const canonical = String(canonicalUrl ?? "").trim();
     if (!canonical) return `/${slug}`;
@@ -24,6 +33,7 @@ export default async function DomainsPage() {
     "domains:domain.findMany",
     () =>
       prisma.domain.findMany({
+        where: { id: { in: accessibleIds } },
         orderBy: { hostname: "asc" },
       }),
     [],

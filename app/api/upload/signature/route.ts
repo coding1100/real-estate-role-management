@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cloudinary } from "@/lib/cloudinary";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 import crypto from "crypto";
 
 function makePublicId(prefix: string) {
@@ -9,17 +10,21 @@ function makePublicId(prefix: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   let body: unknown;
   try {
     body = await req.json();
   } catch {
     body = {};
   }
+
+  const domainId =
+    typeof (body as { domainId?: unknown })?.domainId === "string"
+      ? (body as { domainId: string }).domainId.trim()
+      : undefined;
+  const auth = await apiRequirePermission(PERMISSIONS.MEDIA_UPLOAD_SIGNATURE, {
+    domainId,
+  });
+  if (auth instanceof NextResponse) return auth;
 
   const kind = typeof (body as { kind?: unknown })?.kind === "string" ? (body as { kind: string }).kind : "document";
   const isImage = kind === "image";

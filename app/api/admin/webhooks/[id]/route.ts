@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 type RouteContext = {
   params: Promise<{
@@ -53,10 +54,8 @@ function validateWebhookPatch(body: Record<string, unknown>): {
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(PERMISSIONS.WEBHOOKS_UPDATE);
+  if (auth instanceof NextResponse) return auth;
 
   const body = await req.json();
   const validated = validateWebhookPatch((body ?? {}) as Record<string, unknown>);
@@ -79,10 +78,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 }
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(PERMISSIONS.WEBHOOKS_DELETE);
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
 

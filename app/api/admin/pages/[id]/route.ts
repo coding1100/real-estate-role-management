@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequireAuth, jsonForbidden } from "@/lib/apiAuth";
+import { AuthError } from "@/lib/authorization";
+import { assertPagePatchAllowed } from "@/lib/pagePatchAuth";
+import { can } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 import { isFixedDefaultHomepagePage } from "@/lib/defaultHomepage";
 import { sanitizeCtaTitle, type CtaForwardingRule } from "@/lib/types/ctaForwarding";
 
@@ -234,10 +238,8 @@ function normalizeToastThemeOverride(
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const body = await req.json();
   const { id } = await ctx.params;
@@ -278,6 +280,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         domainId: string;
         canonicalUrl: string | null;
         slug: string;
+        status: string;
         deletedAt: Date | null;
         archivedSlug: string | null;
       }
@@ -288,6 +291,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         domainId: string;
         canonicalUrl: string | null;
         slug: string;
+        status: string;
         deletedAt: Date | null;
         archivedSlug: string | null;
       }>
@@ -296,6 +300,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         "domainId",
         "canonicalUrl",
         "slug",
+        "status",
         "deletedAt",
         "archivedSlug"
       FROM "LandingPage"
@@ -352,6 +357,23 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   if (!existingPage) {
     return NextResponse.json({ error: "Page not found." }, { status: 404 });
   }
+
+  const pageStatus =
+    existingPage.status === "published" ? "published" : "draft";
+
+  try {
+    assertPagePatchAllowed(auth, body as Record<string, unknown>, {
+      domainId: existingPage.domainId,
+      pageStatus,
+      isRestore: body.action === "restore",
+    });
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
+  }
+
   const currentDomain = await prisma.domain.findUnique({
     where: { id: existingPage.domainId },
     select: { hostname: true },
@@ -853,10 +875,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
   const isFixedDefaultHomepage = await isFixedDefaultHomepagePage(id);
@@ -881,8 +901,27 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     if (!pageToDelete) {
       return NextResponse.json({ error: "Page not found." }, { status: 404 });
     }
+
+    const pageMeta = await prisma.landingPage.findUnique({
+      where: { id },
+      select: { domainId: true, status: true },
+    });
+    if (!pageMeta) {
+      return NextResponse.json({ error: "Page not found." }, { status: 404 });
+    }
+    const pageStatus =
+      pageMeta.status === "published" ? "published" : "draft";
+
     if (pageToDelete.deletedAt) {
       const isPermanent = req.nextUrl.searchParams.get("permanent") === "1";
+      if (
+        !can(auth, PERMISSIONS.PAGES_DELETE_PERMANENT, {
+          domainId: pageMeta.domainId,
+          pageStatus,
+        })
+      ) {
+        return jsonForbidden();
+      }
       if (!isPermanent) {
         return NextResponse.json(
           { error: "Page is already archived." },
@@ -928,6 +967,15 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
       }
     }
 
+    if (
+      !can(auth, PERMISSIONS.PAGES_ARCHIVE, {
+        domainId: pageMeta.domainId,
+        pageStatus,
+      })
+    ) {
+      return jsonForbidden();
+    }
+
     const archivedSlugValue = `${pageToDelete.slug}--archived-${pageToDelete.id.slice(
       0,
       8,
@@ -935,7 +983,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     await prisma.$executeRaw`
       UPDATE "LandingPage"
       SET "deletedAt" = NOW(),
-          "deletedBy" = ${session.user?.email ?? "admin"},
+          "deletedBy" = ${auth.email},
           "archivedSlug" = COALESCE("archivedSlug", "slug"),
           "slug" = ${archivedSlugValue},
           "status" = 'draft',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequirePermission } from "@/lib/apiAuth";
+import { PERMISSIONS } from "@/lib/permissions";
 
 function validateWebhookInput(input: {
   name: unknown;
@@ -42,10 +43,8 @@ function validateWebhookInput(input: {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(PERMISSIONS.WEBHOOKS_CREATE);
+  if (auth instanceof NextResponse) return auth;
 
   const body = await req.json();
   const { name, url, method = "POST", isActive = true } = body ?? {};

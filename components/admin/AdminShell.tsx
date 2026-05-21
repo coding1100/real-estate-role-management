@@ -16,6 +16,10 @@ import {
 import { signOut } from "next-auth/react";
 import { ToastProvider } from "@/components/ui/use-toast";
 import type { ToastTheme } from "@/lib/uiSettings";
+import { useCan } from "@/components/admin/AuthContext";
+import { PERMISSIONS, type Permission } from "@/lib/permissions";
+import { Users, RadioTower, Inbox, Shield } from "lucide-react";
+import { TenantSwitcher } from "@/components/admin/TenantSwitcher";
 
 interface AdminShellProps {
   children: ReactNode;
@@ -51,15 +55,22 @@ function navLinkActive(pathname: string, href: string): boolean {
   return false;
 }
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/domains", label: "Domains", icon: Globe2 },
-  // { href: "/admin/pages", label: "Landing Pages", icon: FileText },
+const navItems: {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permission?: Permission;
+}[] = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
+  { href: "/admin/domains", label: "Domains", icon: Globe2, permission: PERMISSIONS.DOMAIN_LIST },
   { href: "/admin/pages-2", label: "Landing Pages", icon: FileText },
-  { href: "/admin/pages-2/archived", label: "Archived Pages", icon: Recycle },
-  { href: "/admin/templates", label: "Templates", icon: Layers },
-  // { href: "/admin/webhooks", label: "Webhooks", icon: RadioTower },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin/pages-2/archived", label: "Archived Pages", icon: Recycle, permission: PERMISSIONS.PAGES_LIST_ARCHIVED },
+  { href: "/admin/leads", label: "Leads", icon: Inbox, permission: PERMISSIONS.LEADS_LIST },
+  { href: "/admin/templates", label: "Templates", icon: Layers, permission: PERMISSIONS.TEMPLATES_LIST },
+  { href: "/admin/webhooks", label: "Webhooks", icon: RadioTower, permission: PERMISSIONS.WEBHOOKS_LIST },
+  { href: "/admin/team", label: "Team", icon: Users, permission: PERMISSIONS.TEAM_LIST },
+  { href: "/admin/roles", label: "Roles", icon: Shield, permission: PERMISSIONS.TENANT_ROLES_LIST },
+  { href: "/admin/settings", label: "Settings", icon: Settings, permission: PERMISSIONS.SETTINGS_GLOBAL_READ },
 ];
 
 export function AdminShell({
@@ -70,6 +81,32 @@ export function AdminShell({
 }: AdminShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(false);
+  const canDashboard = useCan(PERMISSIONS.DASHBOARD_VIEW);
+  const canDomains = useCan(PERMISSIONS.DOMAIN_LIST);
+  const canListAllPages = useCan(PERMISSIONS.PAGES_LIST_ALL);
+  const canListPublished = useCan(PERMISSIONS.PAGES_LIST_PUBLISHED);
+  const canArchived = useCan(PERMISSIONS.PAGES_LIST_ARCHIVED);
+  const canLeads = useCan(PERMISSIONS.LEADS_LIST);
+  const canTemplates = useCan(PERMISSIONS.TEMPLATES_LIST);
+  const canWebhooks = useCan(PERMISSIONS.WEBHOOKS_LIST);
+  const canTeam = useCan(PERMISSIONS.TEAM_LIST);
+  const canRoles = useCan(PERMISSIONS.TENANT_ROLES_LIST);
+  const canSettings = useCan(PERMISSIONS.SETTINGS_GLOBAL_READ);
+
+  const navVisible: Record<string, boolean> = {
+    "/admin": canDashboard,
+    "/admin/domains": canDomains,
+    "/admin/pages-2": canListAllPages || canListPublished,
+    "/admin/pages-2/archived": canArchived,
+    "/admin/leads": canLeads,
+    "/admin/templates": canTemplates,
+    "/admin/webhooks": canWebhooks,
+    "/admin/team": canTeam,
+    "/admin/roles": canRoles,
+    "/admin/settings": canSettings,
+  };
+
+  const visibleNavItems = navItems.filter((item) => navVisible[item.href]);
 
   return (
     <ToastProvider theme={toastTheme}>
@@ -90,6 +127,7 @@ export function AdminShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <TenantSwitcher />
             <div className="text-md text-zinc-500 max-[768px]:truncate max-[768px]:max-w-[140px] max-[768px]:text-xs">
               {userEmail}
             </div>
@@ -116,7 +154,7 @@ export function AdminShell({
           }`}
         >
           <nav className="space-y-1 text-sm">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = navLinkActive(pathname, item.href);
 
@@ -161,7 +199,7 @@ export function AdminShell({
               }`}
             >
               <nav className="space-y-1 text-sm">
-                {navItems.map((item) => {
+                {visibleNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = navLinkActive(pathname, item.href);
 

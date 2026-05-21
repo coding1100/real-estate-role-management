@@ -1,8 +1,16 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { TemplatesGridWithDialog } from "@/components/admin/TemplatesGridWithDialog";
 import { safePrismaRead } from "@/lib/prismaRetry";
+import { can, getAccessibleDomainIds, getAuthContext } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export default async function TemplatesPage() {
+  const ctx = await getAuthContext();
+  if (!ctx || !can(ctx, PERMISSIONS.TEMPLATES_LIST)) {
+    redirect("/admin");
+  }
+  const accessibleIds = await getAccessibleDomainIds(ctx);
   const [templates, domains] = await Promise.all([
     safePrismaRead(
       "templates:masterTemplate.findMany",
@@ -17,7 +25,7 @@ export default async function TemplatesPage() {
       "templates:domain.findMany",
       () =>
         prisma.domain.findMany({
-          where: { isActive: true },
+          where: { isActive: true, id: { in: accessibleIds } },
           orderBy: { hostname: "asc" },
           select: { id: true, hostname: true },
         }),

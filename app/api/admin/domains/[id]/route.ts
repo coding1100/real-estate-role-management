@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerAuthSession } from "@/lib/auth";
+import { apiRequireAuth, apiRequirePermission, jsonForbidden } from "@/lib/apiAuth";
+import { can } from "@/lib/authorization";
+import { PERMISSIONS } from "@/lib/permissions";
 import { isLikelyPublicHostname, normalizeHostname } from "@/lib/hostnames";
 import {
   addDomainToProject,
@@ -65,10 +67,8 @@ async function safeReadVercelStatus(hostname: string): Promise<VercelStatusResul
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const body = await req.json();
   const { id } = await ctx.params;
@@ -109,6 +109,17 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   }
   if (!existing) {
     return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+  }
+
+  const hostnameChangedRequested =
+    typeof body.hostname === "string" &&
+    normalizeHostname(body.hostname) !== existing.hostname;
+  if (hostnameChangedRequested) {
+    if (!can(auth, PERMISSIONS.DOMAIN_UPDATE_HOSTNAME, { domainId: id })) {
+      return jsonForbidden();
+    }
+  } else if (!can(auth, PERMISSIONS.DOMAIN_UPDATE_SETTINGS, { domainId: id })) {
+    return jsonForbidden();
   }
 
   const nextHostname = normalizeHostname(
@@ -366,10 +377,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 }
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
-  const session = await getServerAuthSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await apiRequirePermission(PERMISSIONS.DOMAIN_DELETE);
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
   const domain = await prisma.domain.findUnique({ where: { id } });

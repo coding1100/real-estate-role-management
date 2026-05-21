@@ -14,7 +14,7 @@ const databaseUrl =
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: databaseUrl,
+    url: process.env.DIRECT_URL ?? databaseUrl,
   },
 });
 

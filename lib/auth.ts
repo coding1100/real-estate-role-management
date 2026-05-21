@@ -3,13 +3,16 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { getServerSession } from "next-auth";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import {
+  loadUserAccess,
+  listUserTenants,
+  resolveActiveTenantId,
+} from "./authorization";
 
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  // Let NextAuth handle JWT/session lifetime with its defaults. We no longer
-  // enforce a custom 1-hour idle expiration in code.
   pages: {
     signIn: "/admin/login",
   },
@@ -34,6 +37,15 @@ export const authOptions: NextAuthOptions = {
         );
         if (!valid) return null;
 
+        const tenantId = await resolveActiveTenantId(user.id, null);
+        if (!tenantId && !user.isPlatformAdmin) return null;
+
+        const access =
+          tenantId != null
+            ? await loadUserAccess(user.id, tenantId)
+            : null;
+        if (!access && !user.isPlatformAdmin) return null;
+
         return {
           id: user.id,
           name: user.name,
@@ -43,23 +55,46 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = (user as any).id;
+        token.id = user.id;
+        const tenantId = await resolveActiveTenantId(token.id as string, null);
+        if (tenantId) token.activeTenantId = tenantId;
+      }
+      if (trigger === "update" && session?.activeTenantId) {
+        token.activeTenantId = session.activeTenantId as string;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && (token as any).id) {
-        (session.user as any).id = (token as any).id;
+      const userId = token.id as string | undefined;
+      if (!session.user || !userId) return session;
+
+      session.user.id = userId;
+      const activeTenantId =
+        (token.activeTenantId as string | undefined) ??
+        (await resolveActiveTenantId(userId, null)) ??
+        undefined;
+
+      if (activeTenantId) {
+        session.user.activeTenantId = activeTenantId;
+        const access = await loadUserAccess(userId, activeTenantId);
+        if (access) {
+          session.user.email = access.email;
+          session.user.tenantId = access.tenantId;
+          session.user.tenantName = access.tenantName;
+          session.user.isPlatformAdmin = access.isPlatformAdmin;
+          session.user.isTenantAdmin = access.isTenantAdmin;
+        }
       }
+
+      session.user.tenants = await listUserTenants(userId);
+
       return session;
     },
   },
 };
 
 export async function getServerAuthSession() {
-  const session = await getServerSession(authOptions);
-  return session;
+  return getServerSession(authOptions);
 }
-
