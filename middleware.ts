@@ -21,6 +21,14 @@ function parseHostList(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value == null || value.trim() === "") return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return fallback;
+}
+
 function getPlatformHosts(): Set<string> {
   const hosts = new Set<string>(["localhost", "127.0.0.1"]);
   parseHostList(process.env.PLATFORM_HOSTS).forEach((host) => hosts.add(host));
@@ -43,23 +51,41 @@ function getRequestHostname(req: NextRequest): string {
   return normalizeHostname(host);
 }
 
+function isVercelPreviewHost(hostname: string): boolean {
+  const allowVercelPreviews = parseBoolean(
+    process.env.ALLOW_VERCEL_PREVIEW_HOSTS,
+    true,
+  );
+  return allowVercelPreviews && hostname.endsWith(".vercel.app");
+}
+
+function redirectToHome(req: NextRequest): NextResponse {
+  const url = req.nextUrl.clone();
+  url.pathname = "/";
+  url.search = "";
+  return NextResponse.redirect(url);
+}
+
 export function middleware(req: NextRequest) {
-  const hostname = getRequestHostname(req);
-  const platformHosts = getPlatformHosts();
-  const allowVercelPreviews =
-    (process.env.ALLOW_VERCEL_PREVIEW_HOSTS ?? "").trim().toLowerCase() === "true";
+  try {
+    const hostname = getRequestHostname(req);
+    const platformHosts = getPlatformHosts();
 
-  const isPreviewVercelHost =
-    allowVercelPreviews && hostname.endsWith(".vercel.app");
+    if (platformHosts.has(hostname) || isVercelPreviewHost(hostname)) {
+      return NextResponse.next();
+    }
 
-  if (platformHosts.has(hostname) || isPreviewVercelHost) {
+    return redirectToHome(req);
+  } catch {
     return NextResponse.next();
   }
-
-  return NextResponse.redirect(new URL("/", req.url));
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/api/auth/:path*"],
+  matcher: [
+    "/admin",
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/auth/:path*",
+  ],
 };
-
