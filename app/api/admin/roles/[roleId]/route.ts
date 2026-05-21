@@ -7,7 +7,7 @@ import {
   canAssignPermissions,
   normalizeRoleSlug,
   sanitizePermissions,
-} from "@/lib/tenantRoles";
+} from "@/lib/tenantRoleUtils";
 
 type RouteContext = { params: Promise<{ roleId: string }> };
 

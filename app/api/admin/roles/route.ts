@@ -7,7 +7,7 @@ import {
   canAssignPermissions,
   normalizeRoleSlug,
   sanitizePermissions,
-} from "@/lib/tenantRoles";
+} from "@/lib/tenantRoleUtils";
 
 function serializeRole(role: {
   id: string;

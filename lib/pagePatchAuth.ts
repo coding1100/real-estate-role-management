@@ -3,7 +3,7 @@ import {
   can,
   requireCapability,
   type AuthContext,
-} from "@/lib/authorization";
+} from "@/lib/authContext";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 
 const METADATA_KEYS = new Set([

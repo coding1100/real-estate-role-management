@@ -2,20 +2,20 @@ import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/permissions";
 import {
   can,
-  getAccessibleDomainIds,
   getCallerMaxBuiltInRank,
   getEffectivePermissionUnion,
   hasTenantAdminAccess,
   type AuthContext,
-} from "@/lib/authorization";
+} from "@/lib/authContext";
+import { getAccessibleDomainIds } from "@/lib/authorization";
 import type { Permission } from "@/lib/permissions";
 import {
   canAssignPermissions,
-  getBuiltInRoleId,
   isValidPermission,
   roleRankFromBuiltInKey,
   type BuiltInRoleKey,
-} from "@/lib/tenantRoles";
+} from "@/lib/tenantRoleUtils";
+import { getBuiltInRoleId } from "@/lib/tenantRoles";
 
 export type TeamAssignmentInput = {
   domainId: string;

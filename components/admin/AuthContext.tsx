@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import { can, type AuthContext } from "@/lib/authorization";
+import { can, type AuthContext } from "@/lib/authContext";
 import type { Permission } from "@/lib/permissions";
 
 const AuthContextReact = createContext<AuthContext | null>(null);
