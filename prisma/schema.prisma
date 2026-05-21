@@ -1,0 +1,199 @@
+// Prisma schema for real estate landing page system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Domain {
+  id                      String   @id @default(uuid())
+  hostname                String   @unique
+  displayName             String
+  logoUrl                 String?
+  faviconUrl              String?
+  primaryColor            String   @default("#1a365d")
+  accentColor             String   @default("#c6952b")
+  agentName               String?
+  agentPhoto              String?
+  agentPhone              String?
+  complianceText          String?
+  ga4Id                   String?
+  metaPixelId             String?
+  notifyEmail             String
+  notifySms               String?
+  defaultBuyerFormSchema  Json?
+  defaultSellerFormSchema Json?
+  isActive                Boolean  @default(true)
+  // Social media links (shown under forms)
+  linkedinUrl             String?
+  linkedinVisible         Boolean  @default(true)
+  googleUrl               String?
+  googleVisible           Boolean  @default(true)
+  facebookUrl             String?
+  facebookVisible         Boolean  @default(true)
+  instagramUrl            String?
+  instagramVisible        Boolean  @default(true)
+  zillowUrl               String?
+  zillowVisible           Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  pages                   LandingPage[]
+  defaultHomepagePageId   String?
+  defaultHomepageButtonLimit Int @default(9)
+  defaultHomepageButtons  Json?
+  defaultHomepagePage     LandingPage? @relation("DomainDefaultHomepage", fields: [defaultHomepagePageId], references: [id], onDelete: SetNull)
+  leads                   Lead[]
+}
+
+model MasterTemplate {
+  id          String   @id @default(uuid())
+  type        String   @unique
+  name        String
+  sections    Json
+  formSchema  Json
+  isLocked    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  pages       LandingPage[]
+}
+
+model LandingPage {
+  id               String   @id @default(uuid())
+  slug             String
+  domainId         String
+  domain           Domain        @relation(fields: [domainId], references: [id])
+  masterTemplateId String
+  masterTemplate   MasterTemplate @relation(fields: [masterTemplateId], references: [id])
+  type             String
+  status           String   @default("draft")
+  deletedAt        DateTime?
+  deletedBy        String?
+  archivedSlug     String?
+  bookmarked       Boolean  @default(false)
+  /// Sort order within /admin/pages for a given domain (drag-and-drop).
+  adminListOrder   Int      @default(0)
+
+  // Content
+  title          String?
+  headline       String
+  subheadline    String?
+  heroImageUrl   String?
+  sections       Json
+  ctaText        String   @default("Get Access")
+  successMessage String   @default("Thank you!")
+  deliverableUrl String?
+  footerHtml     String?
+  notes          String?
+
+  // Form
+  useCustomForm Boolean @default(false)
+  formSchema    Json?
+
+  // Multistep: entry page lists slugs for step content (e.g. ["market-report-1", "market-report-2", "market-report-3"])
+  multistepStepSlugs Json?
+  /// When true and this page is used as a multistep step, Continue sends CTA notify emails for this page before advancing.
+  multistepNotifyEachStep Boolean @default(false)
+
+  // Branding overrides
+  primaryColor String?
+  accentColor  String?
+
+  // SEO — editable from admin
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    Json?
+  ogImageUrl     String?
+  ogType         String?  @default("website")
+  twitterCard    String?  @default("summary_large_image")
+  canonicalUrl   String?
+  noIndex        Boolean  @default(false)
+  schemaMarkup   Json?
+  customHeadTags Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leads     Lead[]
+  pageLayout PageLayout?
+  defaultHomepageForDomains Domain[] @relation("DomainDefaultHomepage")
+
+  @@unique([domainId, slug])
+}
+
+model PageLayout {
+  id        String   @id @default(uuid())
+  pageId    String   @unique
+  page      LandingPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  // Layout configuration for each container
+  // Array of layout items with x, y, w, h, i (container id), minW, minH, etc.
+  layoutData Json
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id          String   @id @default(uuid())
+  domainId    String
+  domain      Domain      @relation(fields: [domainId], references: [id])
+  pageId      String
+  page        LandingPage @relation(fields: [pageId], references: [id])
+  type        String
+  formData    Json
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  status      String   @default("new")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WebhookConfig {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  method    String   @default("POST")
+  headers   Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminUiSettings {
+  /// Singleton row for global admin / UI settings (including toast design).
+  id               String   @id @default("singleton")
+  toastSuccessBg    String   @default("#ecfdf3")
+  toastSuccessText  String   @default("#166534")
+  toastErrorBg      String   @default("#fef2f2")
+  toastErrorText    String   @default("#b91c1c")
+  toastAlertBg      String   @default("#fffbeb")
+  toastAlertText    String   @default("#92400e")
+  toastInfoBg       String   @default("#eff6ff")
+  toastInfoText     String   @default("#1d4ed8")
+  toastIconSize     Int      @default(24)
+  toastSuccessTitle String   @default("Success")
+  toastSuccessBody  String   @default("Action completed successfully.")
+  toastErrorTitle   String   @default("Something went wrong")
+  toastErrorBody    String   @default("Please try again.")
+  toastAlertTitle   String   @default("Attention")
+  toastAlertBody    String   @default("Please review this information.")
+  /// Optional configuration for editor fonts (array of { label, cssFamily } objects)
+  editorFonts       Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+
