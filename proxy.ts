@@ -66,7 +66,7 @@ function redirectToHome(req: NextRequest): NextResponse {
   return NextResponse.redirect(url);
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   try {
     const hostname = getRequestHostname(req);
     const platformHosts = getPlatformHosts();
@@ -82,10 +82,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin",
-    "/admin/:path*",
-    "/api/admin/:path*",
-    "/api/auth/:path*",
-  ],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/api/auth/:path*"],
 };
