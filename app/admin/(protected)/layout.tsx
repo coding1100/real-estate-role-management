@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import {
   loadUserAccess,
-  listUserTenants,
   resolveActiveTenantId,
 } from "@/lib/authorization";
 import { AuthProvider } from "@/components/admin/AuthContext";
+import { AdminSessionProvider } from "@/components/admin/AdminSessionProvider";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { getAdminUiSettings } from "@/lib/uiSettings";
 import { prisma } from "@/lib/prisma";
@@ -63,18 +63,18 @@ export default async function AdminProtectedLayout({
     archivedCount = 0;
   }
 
-  const tenants = await listUserTenants(session.user.id);
-
   return (
-    <AuthProvider value={authContext}>
-      <AdminShell
-        userEmail={session.user?.email}
-        toastTheme={adminToastTheme}
-        archivedWithLeadsCount={archivedCount}
-      >
-        {children}
-      </AdminShell>
-    </AuthProvider>
+    <AdminSessionProvider>
+      <AuthProvider value={authContext}>
+        <AdminShell
+          userEmail={session.user?.email}
+          toastTheme={adminToastTheme}
+          archivedWithLeadsCount={archivedCount}
+        >
+          {children}
+        </AdminShell>
+      </AuthProvider>
+    </AdminSessionProvider>
   );
 }
 
