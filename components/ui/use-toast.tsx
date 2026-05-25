@@ -183,15 +183,19 @@ export function ToastProvider({
         })}
         <ToastViewport
           className={
-            mergedTheme.position === "top-left"
+            (mergedTheme.adminPosition ?? mergedTheme.position) === "top-left"
               ? "left-4 right-auto top-4 sm:left-6 sm:top-6"
-              : mergedTheme.position === "top-center"
+              : (mergedTheme.adminPosition ?? mergedTheme.position) ===
+                  "top-center"
                 ? "left-1/2 right-auto top-4 -translate-x-1/2 sm:top-6"
-                : mergedTheme.position === "bottom-right"
+                : (mergedTheme.adminPosition ?? mergedTheme.position) ===
+                    "bottom-right"
                   ? "bottom-4 left-auto right-4 top-auto sm:bottom-6 sm:right-6 sm:top-auto"
-                  : mergedTheme.position === "bottom-left"
+                  : (mergedTheme.adminPosition ?? mergedTheme.position) ===
+                      "bottom-left"
                     ? "bottom-4 left-4 right-auto top-auto sm:bottom-6 sm:left-6 sm:top-auto"
-                    : mergedTheme.position === "bottom-center"
+                    : (mergedTheme.adminPosition ?? mergedTheme.position) ===
+                        "bottom-center"
                       ? "bottom-4 left-1/2 right-auto top-auto -translate-x-1/2 sm:bottom-6"
                       : "right-4 top-4 sm:right-6 sm:top-6"
           }

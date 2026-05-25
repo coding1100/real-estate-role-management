@@ -223,7 +223,7 @@ export function CtaForwardingSettingsForm({
             | { reason?: TemplatesFetchReason; message?: string }
             | null;
           if (!ignore && errData?.message) {
-            error(errData.message, "Unable to update");
+            error("Unable to update", errData.message);
           }
           if (!ignore) setTemplatesReason(errData?.reason ?? "resend_api_error");
           throw new Error("Failed to load templates");
@@ -470,7 +470,7 @@ export function CtaForwardingSettingsForm({
         }
         success("CTA forwarding rules saved.");
       } catch {
-        error("Failed to save CTA forwarding rules.", "Unable to update");
+        error("Unable to update", "Failed to save CTA forwarding rules.");
       }
     });
   }
@@ -826,7 +826,7 @@ export function CtaForwardingSettingsForm({
                                       );
                                     } catch (err) {
                                       console.error(err);
-                                      error("Document upload failed.", "Unable to update");
+                                      error("Unable to update", "Document upload failed.");
                                     } finally {
                                       setUploadingKey(null);
                                       e.target.value = "";

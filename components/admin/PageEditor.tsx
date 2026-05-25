@@ -38,6 +38,7 @@ import { useAdminToast } from "@/components/admin/useAdminToast";
 import type { CtaForwardingRule } from "@/lib/types/ctaForwarding";
 import { buildCustomerSiteUrl } from "@/lib/customerSiteUrl";
 import { useCan } from "@/components/admin/AuthContext";
+import { permissionDeniedMessage } from "@/lib/apiMessages";
 import { PERMISSIONS } from "@/lib/permissions";
 
 interface PageEditorProps {
@@ -222,7 +223,8 @@ export function PageEditor({
   const layoutGetHeroElementsRef =
     useRef<(() => HeroElementsByColumn | null) | null>(null);
   const layoutGetLayoutRef = useRef<(() => any[]) | null>(null);
-  const { success: successToast, error: errorToast } = useAdminToast();
+  const { success: successToast, error: errorToast, apiErrorFromResponse } =
+    useAdminToast();
   const heroSections = Array.isArray(page.sections) ? page.sections : [];
   const heroSection = heroSections.find((s) => s.kind === "hero") || null;
   const heroLayout = (heroSection?.props as any) || {};
@@ -357,7 +359,15 @@ export function PageEditor({
     nextStatus?: "draft" | "published",
     action: "save-draft" | "unpublish" | "publish" = "save-draft",
   ) {
-    if (isReadOnly || saving) return;
+    if (isReadOnly || saving) {
+      if (isReadOnly && !saving) {
+        errorToast(
+          "Permission denied",
+          permissionDeniedMessage(PERMISSIONS.PAGES_EDIT_CONTENT),
+        );
+      }
+      return;
+    }
     setMessage(null);
     setActiveSaveAction(action);
     startSaving(async () => {
@@ -479,14 +489,16 @@ export function PageEditor({
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-          const data = (await res.json().catch(() => null)) as
-            | { error?: string }
-            | null;
+          const data = await res.json().catch(() => null);
           const errorMessage =
-            (data && typeof data.error === "string" && data.error) ||
+            (data &&
+              typeof data === "object" &&
+              "error" in data &&
+              typeof (data as { error?: unknown }).error === "string" &&
+              (data as { error: string }).error) ||
             "Failed to save";
           setMessage(errorMessage);
-          errorToast(errorMessage, "Unable to save page");
+          await apiErrorFromResponse(res, data, "Failed to save page.");
         return;
       }
       // Keep local page state in sync with what we just saved so

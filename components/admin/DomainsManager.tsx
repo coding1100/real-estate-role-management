@@ -324,7 +324,18 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
   }, []);
-  const { success: toastSuccess, error: toastError } = useAdminToast();
+  const {
+    success: toastSuccess,
+    error: toastError,
+    apiErrorFromResponse,
+  } = useAdminToast();
+
+  function toastFailure(message: string) {
+    const title = /permission/i.test(message)
+      ? "Permission denied"
+      : "Request failed";
+    toastError(title, message);
+  }
   const homepageButtonsSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
@@ -474,6 +485,11 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
             }
           | null;
         if (!res.ok) {
+          await apiErrorFromResponse(
+            res,
+            data,
+            "Failed to create dedicated default homepage.",
+          );
           throw new Error(data?.error ?? "Failed to create dedicated default homepage.");
         }
         const page = data?.page;
@@ -523,7 +539,7 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
       } catch (e: any) {
         const message = e?.message ?? "Failed to create dedicated default homepage.";
         setError(message);
-        toastError(message);
+        toastFailure(message);
       } finally {
         setSavingId(null);
       }
@@ -549,6 +565,11 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
             }
           | null;
         if (!res.ok) {
+          await apiErrorFromResponse(
+            res,
+            data,
+            "Failed to backfill default home pages.",
+          );
           throw new Error(data?.error ?? "Failed to backfill default home pages.");
         }
         toastSuccess(
@@ -558,7 +579,7 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
       } catch (e: any) {
         const message = e?.message ?? "Failed to backfill default home pages.";
         setError(message);
-        toastError(message);
+        toastFailure(message);
       } finally {
         setIsBackfillingDefaults(false);
       }
@@ -573,14 +594,14 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
     if (!isValidEmail(notifyEmail)) {
       const message = "Notify email must be a valid email (e.g., sample@gmail.com).";
       setError(message);
-      toastError(message);
+      toastFailure(message);
       return;
     }
     if (!isValidUsPhone(notifySms)) {
       const message =
         "Notify SMS must be a valid US number (10 digits, or 11 digits starting with 1).";
       setError(message);
-      toastError(message);
+      toastFailure(message);
       return;
     }
     const normalizedButtons = domain.defaultHomepageButtons.map((button) => {
@@ -603,7 +624,7 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
         const label = button.label?.trim() || "Homepage button";
         const message = `${label}: external link must start with http:// or https://`;
         setError(message);
-        toastError(message);
+        toastFailure(message);
         return;
       }
     }
@@ -632,8 +653,17 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
           }),
           credentials: "include",
         });
-        if (!res.ok) throw new Error("Failed to save domain");
-        const data = (await res.json()) as { domain: any };
+        const data = (await res.json().catch(() => ({}))) as {
+          domain?: Record<string, unknown>;
+          error?: string;
+        };
+        if (!res.ok) {
+          await apiErrorFromResponse(res, data, "Failed to save domain.");
+          throw new Error(
+            typeof data.error === "string" ? data.error : "Failed to save domain",
+          );
+        }
+        if (!data.domain) throw new Error("Failed to save domain");
         const mapped: DomainRow = {
           id: String(data.domain.id),
           hostname: String(data.domain.hostname),
@@ -745,7 +775,7 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
         console.error(e);
         const message = e?.message ?? "Failed to save domain";
         setError(message);
-        toastError(message);
+        toastFailure(message);
       } finally {
         setSavingId(null);
       }
@@ -762,14 +792,25 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
           method: "DELETE",
           credentials: "include",
         });
-        if (!res.ok) throw new Error("Failed to delete domain");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          await apiErrorFromResponse(res, data, "Failed to delete domain.");
+          throw new Error(
+            typeof data === "object" &&
+              data &&
+              "error" in data &&
+              typeof (data as { error?: string }).error === "string"
+              ? (data as { error: string }).error
+              : "Failed to delete domain",
+          );
+        }
         setDomains((prev) => prev.filter((d) => d.id !== id));
         toastSuccess("Domain deleted successfully.");
       } catch (e: any) {
         console.error(e);
         const message = e?.message ?? "Failed to delete domain";
         setError(message);
-        toastError(message);
+        toastFailure(message);
       } finally {
         setSavingId(null);
       }
@@ -864,9 +905,13 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
         });
         const data = await res.json();
         if (!res.ok) {
-          const message = data?.error ?? "Failed to create domain";
+          const message =
+            (data && typeof data === "object" && "error" in data &&
+              typeof (data as { error?: string }).error === "string"
+              ? (data as { error: string }).error
+              : null) ?? "Failed to create domain";
+          await apiErrorFromResponse(res, data, message);
           setAddFormError(message);
-          toastError(message);
           return;
         }
         const created = data.domain as Record<string, unknown>;
@@ -946,7 +991,7 @@ export function DomainsManager({ initialDomains }: DomainsManagerProps) {
         console.error(e);
         const message = e?.message ?? "Failed to create domain";
         setAddFormError(message);
-        toastError(message);
+        toastFailure(message);
       } finally {
         setSavingId(null);
       }

@@ -1,0 +1,631 @@
+{
+  "generatedAt": "2026-05-22T12:25:28.467Z",
+  "summary": {
+    "total": 65,
+    "passed": 65,
+    "failed": 0,
+    "passRate": 1
+  },
+  "categories": [
+    {
+      "category": "Roles",
+      "passed": 24,
+      "failed": 0,
+      "scenarios": [
+        {
+          "id": "ROLE-001-explorer",
+          "category": "Roles",
+          "name": "explorer permissionsForBuiltIn matches ROLE_PERMISSIONS",
+          "actor": "explorer",
+          "expected": "sets are identical",
+          "actual": "ok",
+          "pass": true
+        },
+        {
+          "id": "ROLE-001-member",
+          "category": "Roles",
+          "name": "member permissionsForBuiltIn matches ROLE_PERMISSIONS",
+          "actor": "member",
+          "expected": "sets are identical",
+          "actual": "ok",
+          "pass": true
+        },
+        {
+          "id": "ROLE-001-executive",
+          "category": "Roles",
+          "name": "executive permissionsForBuiltIn matches ROLE_PERMISSIONS",
+          "actor": "executive",
+          "expected": "sets are identical",
+          "actual": "ok",
+          "pass": true
+        },
+        {
+          "id": "ROLE-001-admin",
+          "category": "Roles",
+          "name": "admin permissionsForBuiltIn matches ROLE_PERMISSIONS",
+          "actor": "admin",
+          "expected": "admin includes tenant role extras",
+          "actual": "ok",
+          "pass": true
+        },
+        {
+          "id": "RANK-001",
+          "category": "Roles",
+          "name": "Built-in role ranks increase correctly",
+          "actor": "system",
+          "expected": "strict ascending ranks",
+          "actual": "ordered",
+          "pass": true
+        },
+        {
+          "id": "RANK-002",
+          "category": "Roles",
+          "name": "explorer may assign member role (legacy canAssignRole)",
+          "actor": "explorer",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "RANK-003",
+          "category": "Roles",
+          "name": "member may assign executive role (legacy canAssignRole)",
+          "actor": "member",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "RANK-004",
+          "category": "Roles",
+          "name": "member may assign explorer role (legacy canAssignRole)",
+          "actor": "member",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "RANK-005",
+          "category": "Roles",
+          "name": "executive may assign member role (legacy canAssignRole)",
+          "actor": "executive",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "RANK-006",
+          "category": "Roles",
+          "name": "executive may assign admin role (legacy canAssignRole)",
+          "actor": "executive",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "RANK-007",
+          "category": "Roles",
+          "name": "admin may assign executive role (legacy canAssignRole)",
+          "actor": "admin",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "RANK-008",
+          "category": "Roles",
+          "name": "Member cannot assign executive-level built-in role",
+          "actor": "member",
+          "expected": "target rank > caller rank",
+          "actual": "blocked",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-explorer-pages:edit_content",
+          "category": "Roles",
+          "name": "explorer roleHasPermission(pages:edit_content) === can()",
+          "actor": "explorer",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-explorer-team:create",
+          "category": "Roles",
+          "name": "explorer roleHasPermission(team:create) === can()",
+          "actor": "explorer",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-explorer-webhooks:list",
+          "category": "Roles",
+          "name": "explorer roleHasPermission(webhooks:list) === can()",
+          "actor": "explorer",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-member-pages:edit_content",
+          "category": "Roles",
+          "name": "member roleHasPermission(pages:edit_content) === can()",
+          "actor": "member",
+          "expected": "true",
+          "actual": "legacy=true can=true",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-member-team:create",
+          "category": "Roles",
+          "name": "member roleHasPermission(team:create) === can()",
+          "actor": "member",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-member-webhooks:list",
+          "category": "Roles",
+          "name": "member roleHasPermission(webhooks:list) === can()",
+          "actor": "member",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-executive-pages:edit_content",
+          "category": "Roles",
+          "name": "executive roleHasPermission(pages:edit_content) === can()",
+          "actor": "executive",
+          "expected": "true",
+          "actual": "legacy=true can=true",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-executive-team:create",
+          "category": "Roles",
+          "name": "executive roleHasPermission(team:create) === can()",
+          "actor": "executive",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-executive-webhooks:list",
+          "category": "Roles",
+          "name": "executive roleHasPermission(webhooks:list) === can()",
+          "actor": "executive",
+          "expected": "false",
+          "actual": "legacy=false can=false",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-admin-pages:edit_content",
+          "category": "Roles",
+          "name": "admin roleHasPermission(pages:edit_content) === can()",
+          "actor": "admin",
+          "expected": "true",
+          "actual": "legacy=true can=true",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-admin-team:create",
+          "category": "Roles",
+          "name": "admin roleHasPermission(team:create) === can()",
+          "actor": "admin",
+          "expected": "true",
+          "actual": "legacy=true can=true",
+          "pass": true
+        },
+        {
+          "id": "LEGACY-001-admin-webhooks:list",
+          "category": "Roles",
+          "name": "admin roleHasPermission(webhooks:list) === can()",
+          "actor": "admin",
+          "expected": "true",
+          "actual": "legacy=true can=true",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "category": "Pages",
+      "passed": 14,
+      "failed": 0,
+      "scenarios": [
+        {
+          "id": "PAGE-001",
+          "category": "Pages",
+          "name": "explorer pages:edit_content (published)",
+          "actor": "explorer",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "PAGE-002",
+          "category": "Pages",
+          "name": "explorer pages:publish (published)",
+          "actor": "explorer",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "PAGE-003",
+          "category": "Pages",
+          "name": "explorer pages:view_live (published)",
+          "actor": "explorer",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PAGE-004",
+          "category": "Pages",
+          "name": "member pages:edit_content (published)",
+          "actor": "member",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PAGE-005",
+          "category": "Pages",
+          "name": "member pages:publish (published)",
+          "actor": "member",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "PAGE-006",
+          "category": "Pages",
+          "name": "member pages:edit_content (draft)",
+          "actor": "member",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "PAGE-007",
+          "category": "Pages",
+          "name": "executive pages:publish (draft)",
+          "actor": "executive",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PAGE-008",
+          "category": "Pages",
+          "name": "executive pages:create (published)",
+          "actor": "executive",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PAGE-009",
+          "category": "Pages",
+          "name": "admin tenant:roles:create (published)",
+          "actor": "admin",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PATCH-001",
+          "category": "Pages",
+          "name": "Explorer blocked from editing published content",
+          "actor": "explorer",
+          "expected": "403 denied",
+          "actual": "You do not have permission to edit page content.",
+          "pass": true
+        },
+        {
+          "id": "PATCH-002",
+          "category": "Pages",
+          "name": "Member can edit published content",
+          "actor": "member",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PATCH-003",
+          "category": "Pages",
+          "name": "Member cannot set status published",
+          "actor": "member",
+          "expected": "403 denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "PATCH-004",
+          "category": "Pages",
+          "name": "Executive can publish draft page",
+          "actor": "executive",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "PATCH-005",
+          "category": "Pages",
+          "name": "Explorer blocked from any draft PATCH",
+          "actor": "explorer",
+          "expected": "403 denied",
+          "actual": "denied",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "category": "Team",
+      "passed": 19,
+      "failed": 0,
+      "scenarios": [
+        {
+          "id": "TEAM-001",
+          "category": "Team",
+          "name": "explorer can team:list",
+          "actor": "explorer",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "TEAM-002",
+          "category": "Team",
+          "name": "explorer can team:create",
+          "actor": "explorer",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "TEAM-003",
+          "category": "Team",
+          "name": "member can team:create",
+          "actor": "member",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "TEAM-004",
+          "category": "Team",
+          "name": "member can team:update",
+          "actor": "member",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "TEAM-005",
+          "category": "Team",
+          "name": "executive can team:create",
+          "actor": "executive",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "TEAM-006",
+          "category": "Team",
+          "name": "executive can tenant:roles:list",
+          "actor": "executive",
+          "expected": "denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "TEAM-007",
+          "category": "Team",
+          "name": "admin can team:list",
+          "actor": "admin",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "TEAM-008",
+          "category": "Team",
+          "name": "admin can team:create",
+          "actor": "admin",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "TEAM-009",
+          "category": "Team",
+          "name": "admin can tenant:roles:create",
+          "actor": "admin",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "TEAM-010",
+          "category": "Team",
+          "name": "Executive with isTenantAdmin has tenant admin access",
+          "actor": "executive (tenant admin)",
+          "expected": "hasTenantAdminAccess true",
+          "actual": "true",
+          "pass": true
+        },
+        {
+          "id": "ADMIN-001",
+          "category": "Team",
+          "name": "isProtectedBuiltInRole only locks admin",
+          "actor": "system",
+          "expected": "admin protected, executive not",
+          "actual": "correct",
+          "pass": true
+        },
+        {
+          "id": "ADMIN-002",
+          "category": "Team",
+          "name": "Admin role member is protected",
+          "actor": "admin assignee",
+          "expected": "memberHasAdminRole true",
+          "actual": "protected",
+          "pass": true
+        },
+        {
+          "id": "ADMIN-003",
+          "category": "Team",
+          "name": "Member role assignee is not protected",
+          "actor": "member assignee",
+          "expected": "memberHasAdminRole false",
+          "actual": "not protected",
+          "pass": true
+        },
+        {
+          "id": "GUARD-001",
+          "category": "Team",
+          "name": "Admin member removal blocked",
+          "actor": "tenant admin",
+          "expected": "TeamValidationError 400",
+          "actual": "Members with the Admin role cannot be removed.",
+          "pass": true
+        },
+        {
+          "id": "GUARD-002",
+          "category": "Team",
+          "name": "Member assignee can be removed",
+          "actor": "tenant admin",
+          "expected": "no error",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "GUARD-003",
+          "category": "Team",
+          "name": "Updating admin member while staying on Admin blocked",
+          "actor": "tenant admin",
+          "expected": "TeamValidationError 400",
+          "actual": "This member has the Admin role. Choose a non-Admin role to change their access, or leave Admin unchanged.",
+          "pass": true
+        },
+        {
+          "id": "GUARD-004",
+          "category": "Team",
+          "name": "Demote admin to member allowed at guard layer",
+          "actor": "tenant admin",
+          "expected": "no error from assertTeamMemberUpdateAllowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "GUARD-005",
+          "category": "Team",
+          "name": "Explorer team member can be removed",
+          "actor": "tenant admin",
+          "expected": "removal allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "GUARD-006",
+          "category": "Team",
+          "name": "Executive assignee can be removed",
+          "actor": "tenant admin",
+          "expected": "removal allowed",
+          "actual": "allowed",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "category": "Custom roles",
+      "passed": 4,
+      "failed": 0,
+      "scenarios": [
+        {
+          "id": "CUSTOM-001",
+          "category": "Custom roles",
+          "name": "View-only custom role denied edit content",
+          "actor": "custom (view only)",
+          "expected": "edit denied",
+          "actual": "denied",
+          "pass": true
+        },
+        {
+          "id": "CUSTOM-002",
+          "category": "Custom roles",
+          "name": "View-only custom role can view live",
+          "actor": "custom (view only)",
+          "expected": "view allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "CUSTOM-003",
+          "category": "Custom roles",
+          "name": "Executive cannot create role with team:create",
+          "actor": "executive",
+          "expected": "canAssignPermissions false",
+          "actual": "cannot grant",
+          "pass": true
+        },
+        {
+          "id": "CUSTOM-004",
+          "category": "Custom roles",
+          "name": "Admin can grant member page permissions to custom role",
+          "actor": "admin",
+          "expected": "canAssignPermissions true",
+          "actual": "can grant",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "category": "Domains",
+      "passed": 4,
+      "failed": 0,
+      "scenarios": [
+        {
+          "id": "DOMAIN-001",
+          "category": "Domains",
+          "name": "Executive publish on domain A",
+          "actor": "executive (domain A)",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "DOMAIN-002",
+          "category": "Domains",
+          "name": "Executive publish on domain B",
+          "actor": "executive (domain B)",
+          "expected": "allowed",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "DOMAIN-003",
+          "category": "Domains",
+          "name": "Explorer can view pages list (published)",
+          "actor": "explorer",
+          "expected": "canViewPageList true",
+          "actual": "allowed",
+          "pass": true
+        },
+        {
+          "id": "DOMAIN-004",
+          "category": "Domains",
+          "name": "Explorer cannot list all statuses",
+          "actor": "explorer",
+          "expected": "PAGES_LIST_ALL denied",
+          "actual": "denied",
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

@@ -74,6 +74,222 @@ export const PERMISSIONS = {
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
+/** Human-readable labels for admin UI (roles editor, etc.). */
+export const PERMISSION_LABELS: Record<Permission, string> = {
+  [PERMISSIONS.PLATFORM_LOGIN]: "Log in",
+  [PERMISSIONS.PLATFORM_LOGOUT]: "Log out",
+
+  [PERMISSIONS.TEAM_LIST]: "View team",
+  [PERMISSIONS.TEAM_CREATE]: "Create team members",
+  [PERMISSIONS.TEAM_UPDATE]: "Edit team members",
+  [PERMISSIONS.TEAM_REMOVE]: "Remove team members",
+  [PERMISSIONS.TEAM_ASSIGN_ROLE]: "Assign team roles",
+
+  [PERMISSIONS.TENANT_ROLES_LIST]: "View roles",
+  [PERMISSIONS.TENANT_ROLES_CREATE]: "Create roles",
+  [PERMISSIONS.TENANT_ROLES_UPDATE]: "Edit roles",
+  [PERMISSIONS.TENANT_ROLES_DELETE]: "Delete roles",
+
+  [PERMISSIONS.DOMAIN_LIST]: "View domains",
+  [PERMISSIONS.DOMAIN_READ]: "View domain details",
+  [PERMISSIONS.DOMAIN_CREATE]: "Create domains",
+  [PERMISSIONS.DOMAIN_DELETE]: "Delete domains",
+  [PERMISSIONS.DOMAIN_UPDATE_SETTINGS]: "Edit domain settings",
+  [PERMISSIONS.DOMAIN_UPDATE_HOSTNAME]: "Change domain hostname",
+  [PERMISSIONS.DOMAIN_VERIFY]: "Verify domains",
+  [PERMISSIONS.DOMAIN_STATUS_READ]: "View domain status",
+  [PERMISSIONS.DOMAIN_DEFAULT_HOMEPAGE_WRITE]: "Set default homepage",
+  [PERMISSIONS.DOMAIN_DEFAULT_HOMEPAGE_BACKFILL]: "Backfill default homepages",
+
+  [PERMISSIONS.PAGES_LIST_ALL]: "List all pages (any status)",
+  [PERMISSIONS.PAGES_LIST_PUBLISHED]: "List published pages only",
+  [PERMISSIONS.PAGES_LIST_ARCHIVED]: "List archived pages",
+  [PERMISSIONS.PAGES_CREATE]: "Create pages",
+  [PERMISSIONS.PAGES_DUPLICATE]: "Duplicate pages",
+  [PERMISSIONS.PAGES_REORDER]: "Reorder pages",
+  [PERMISSIONS.PAGES_VIEW_DRAFT]: "Preview draft pages",
+  [PERMISSIONS.PAGES_VIEW_LIVE]: "View live pages",
+  [PERMISSIONS.PAGES_EDIT_METADATA]: "Edit page metadata",
+  [PERMISSIONS.PAGES_EDIT_CONTENT]: "Edit page content",
+  [PERMISSIONS.PAGES_EDIT_LAYOUT]: "Edit page layout",
+  [PERMISSIONS.PAGES_EDIT_FORM]: "Edit page forms",
+  [PERMISSIONS.PAGES_EDIT_SEO]: "Edit page SEO",
+  [PERMISSIONS.PAGES_EDIT_BRANDING]: "Edit page branding overrides",
+  [PERMISSIONS.PAGES_EDIT_CTA]: "Edit page call-to-action",
+  [PERMISSIONS.PAGES_EDIT_TOAST]: "Edit page toast messages",
+  [PERMISSIONS.PAGES_EDIT_MULTISTEP]: "Edit multistep notifications",
+  [PERMISSIONS.PAGES_PUBLISH]: "Publish pages",
+  [PERMISSIONS.PAGES_ARCHIVE]: "Archive pages",
+  [PERMISSIONS.PAGES_RESTORE]: "Restore archived pages",
+  [PERMISSIONS.PAGES_DELETE_PERMANENT]: "Permanently delete pages",
+  [PERMISSIONS.PAGES_MULTISTEP_PICKER]: "Use multistep page picker",
+
+  [PERMISSIONS.LEADS_LIST]: "View leads",
+
+  [PERMISSIONS.MEDIA_UPLOAD]: "Upload media",
+  [PERMISSIONS.MEDIA_UPLOAD_SIGNATURE]: "Sign media uploads",
+
+  [PERMISSIONS.TEMPLATES_LIST]: "View templates",
+  [PERMISSIONS.TEMPLATES_CREATE_PAGE]: "Create pages from templates",
+  [PERMISSIONS.TEMPLATES_SYNC_MASTER]: "Sync master templates",
+
+  [PERMISSIONS.WEBHOOKS_LIST]: "View webhooks",
+  [PERMISSIONS.WEBHOOKS_CREATE]: "Create webhooks",
+  [PERMISSIONS.WEBHOOKS_UPDATE]: "Edit webhooks",
+  [PERMISSIONS.WEBHOOKS_DELETE]: "Delete webhooks",
+
+  [PERMISSIONS.SETTINGS_GLOBAL_READ]: "View global settings",
+  [PERMISSIONS.SETTINGS_GLOBAL_WRITE]: "Edit global settings",
+  [PERMISSIONS.SETTINGS_PAGE_CTA]: "Edit page CTA settings",
+
+  [PERMISSIONS.INTEGRATIONS_RESEND_TEMPLATES]: "Manage Resend email templates",
+
+  [PERMISSIONS.CACHE_REVALIDATE]: "Revalidate site cache",
+
+  [PERMISSIONS.DASHBOARD_VIEW]: "View dashboard",
+};
+
+/** Grouped permissions for the roles editor UI. */
+export const PERMISSION_UI_GROUPS: { label: string; perms: Permission[] }[] = [
+  {
+    label: "Platform",
+    perms: [PERMISSIONS.PLATFORM_LOGIN, PERMISSIONS.PLATFORM_LOGOUT],
+  },
+  {
+    label: "Dashboard",
+    perms: [PERMISSIONS.DASHBOARD_VIEW],
+  },
+  {
+    label: "Team",
+    perms: [
+      PERMISSIONS.TEAM_LIST,
+      PERMISSIONS.TEAM_CREATE,
+      PERMISSIONS.TEAM_UPDATE,
+      PERMISSIONS.TEAM_REMOVE,
+      PERMISSIONS.TEAM_ASSIGN_ROLE,
+    ],
+  },
+  {
+    label: "Roles",
+    perms: [
+      PERMISSIONS.TENANT_ROLES_LIST,
+      PERMISSIONS.TENANT_ROLES_CREATE,
+      PERMISSIONS.TENANT_ROLES_UPDATE,
+      PERMISSIONS.TENANT_ROLES_DELETE,
+    ],
+  },
+  {
+    label: "Domains",
+    perms: [
+      PERMISSIONS.DOMAIN_LIST,
+      PERMISSIONS.DOMAIN_READ,
+      PERMISSIONS.DOMAIN_CREATE,
+      PERMISSIONS.DOMAIN_DELETE,
+      PERMISSIONS.DOMAIN_UPDATE_SETTINGS,
+      PERMISSIONS.DOMAIN_UPDATE_HOSTNAME,
+      PERMISSIONS.DOMAIN_VERIFY,
+      PERMISSIONS.DOMAIN_STATUS_READ,
+      PERMISSIONS.DOMAIN_DEFAULT_HOMEPAGE_WRITE,
+      PERMISSIONS.DOMAIN_DEFAULT_HOMEPAGE_BACKFILL,
+    ],
+  },
+  {
+    label: "Pages",
+    perms: [
+      PERMISSIONS.PAGES_LIST_ALL,
+      PERMISSIONS.PAGES_LIST_PUBLISHED,
+      PERMISSIONS.PAGES_LIST_ARCHIVED,
+      PERMISSIONS.PAGES_CREATE,
+      PERMISSIONS.PAGES_DUPLICATE,
+      PERMISSIONS.PAGES_REORDER,
+      PERMISSIONS.PAGES_VIEW_DRAFT,
+      PERMISSIONS.PAGES_VIEW_LIVE,
+      PERMISSIONS.PAGES_EDIT_METADATA,
+      PERMISSIONS.PAGES_EDIT_CONTENT,
+      PERMISSIONS.PAGES_EDIT_LAYOUT,
+      PERMISSIONS.PAGES_EDIT_FORM,
+      PERMISSIONS.PAGES_EDIT_SEO,
+      PERMISSIONS.PAGES_EDIT_BRANDING,
+      PERMISSIONS.PAGES_EDIT_CTA,
+      PERMISSIONS.PAGES_EDIT_TOAST,
+      PERMISSIONS.PAGES_EDIT_MULTISTEP,
+      PERMISSIONS.PAGES_PUBLISH,
+      PERMISSIONS.PAGES_ARCHIVE,
+      PERMISSIONS.PAGES_RESTORE,
+      PERMISSIONS.PAGES_DELETE_PERMANENT,
+      PERMISSIONS.PAGES_MULTISTEP_PICKER,
+    ],
+  },
+  {
+    label: "Leads",
+    perms: [PERMISSIONS.LEADS_LIST],
+  },
+  {
+    label: "Media",
+    perms: [PERMISSIONS.MEDIA_UPLOAD, PERMISSIONS.MEDIA_UPLOAD_SIGNATURE],
+  },
+  {
+    label: "Templates",
+    perms: [
+      PERMISSIONS.TEMPLATES_LIST,
+      PERMISSIONS.TEMPLATES_CREATE_PAGE,
+      PERMISSIONS.TEMPLATES_SYNC_MASTER,
+    ],
+  },
+  {
+    label: "Webhooks",
+    perms: [
+      PERMISSIONS.WEBHOOKS_LIST,
+      PERMISSIONS.WEBHOOKS_CREATE,
+      PERMISSIONS.WEBHOOKS_UPDATE,
+      PERMISSIONS.WEBHOOKS_DELETE,
+    ],
+  },
+  {
+    label: "Settings",
+    perms: [
+      PERMISSIONS.SETTINGS_GLOBAL_READ,
+      PERMISSIONS.SETTINGS_GLOBAL_WRITE,
+      PERMISSIONS.SETTINGS_PAGE_CTA,
+    ],
+  },
+  {
+    label: "Integrations",
+    perms: [PERMISSIONS.INTEGRATIONS_RESEND_TEMPLATES],
+  },
+  {
+    label: "Cache",
+    perms: [PERMISSIONS.CACHE_REVALIDATE],
+  },
+];
+
+export function getPermissionLabel(perm: Permission | string): string {
+  if (perm in PERMISSION_LABELS) {
+    return PERMISSION_LABELS[perm as Permission];
+  }
+  const [resource, action] = perm.split(":");
+  if (!action) return perm;
+  const words = action.replace(/_/g, " ").split(" ");
+  const verb = words[0];
+  const rest = words.slice(1).join(" ");
+  const verbMap: Record<string, string> = {
+    list: "View",
+    create: "Create",
+    update: "Edit",
+    delete: "Delete",
+    read: "View",
+    upload: "Upload",
+    publish: "Publish",
+    archive: "Archive",
+    restore: "Restore",
+    verify: "Verify",
+    revalidate: "Revalidate",
+  };
+  const v = verbMap[verb] ?? verb.charAt(0).toUpperCase() + verb.slice(1);
+  const noun = (rest || resource).replace(/_/g, " ");
+  return `${v} ${noun}`.trim();
+}
+
 export type AdminDomainRole = "admin" | "executive" | "member" | "explorer";
 
 export const ROLE_RANK: Record<AdminDomainRole, number> = {

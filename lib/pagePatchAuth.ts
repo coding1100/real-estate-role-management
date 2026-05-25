@@ -1,3 +1,4 @@
+import { permissionDeniedMessage } from "@/lib/apiMessages";
 import {
   AuthError,
   can,
@@ -94,25 +95,34 @@ export function assertPagePatchAllowed(
 
   if (builtInKey === "member" || builtInKey === "explorer") {
     if (pageStatus !== "published") {
-      throw new AuthError(403, "Forbidden");
+      throw new AuthError(
+        403,
+        permissionDeniedMessage(PERMISSIONS.PAGES_EDIT_CONTENT),
+      );
     }
     if (Object.prototype.hasOwnProperty.call(body, "status")) {
-      throw new AuthError(403, "Forbidden");
+      throw new AuthError(403, permissionDeniedMessage(PERMISSIONS.PAGES_PUBLISH));
     }
     if (Object.prototype.hasOwnProperty.call(body, "slug")) {
-      throw new AuthError(403, "Forbidden");
+      throw new AuthError(
+        403,
+        permissionDeniedMessage(PERMISSIONS.PAGES_EDIT_METADATA),
+      );
     }
   }
 
   if (builtInKey === "explorer") {
-    throw new AuthError(403, "Forbidden");
+    throw new AuthError(
+      403,
+      permissionDeniedMessage(PERMISSIONS.PAGES_EDIT_CONTENT),
+    );
   }
 
   const keys = Object.keys(body).filter((k) => k !== "action");
   for (const key of keys) {
     for (const perm of permissionsForBodyKey(key)) {
       if (!can(ctx, perm, { domainId, pageStatus })) {
-        throw new AuthError(403, "Forbidden");
+        throw new AuthError(403, permissionDeniedMessage(perm));
       }
     }
   }

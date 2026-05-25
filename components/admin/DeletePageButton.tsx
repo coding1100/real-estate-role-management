@@ -77,15 +77,15 @@ export function DeletePageButton({
       router.refresh();
       success(
         isRestore
-          ? `Page "${slug}" restored.`
-          : isPermanentDelete
-            ? `Page "${slug}" permanently deleted.`
-            : `Page "${slug}" archived.`,
-        isRestore
           ? "Page restored"
           : isPermanentDelete
             ? "Page permanently deleted"
             : "Page archived",
+        isRestore
+          ? `Page "${slug}" restored.`
+          : isPermanentDelete
+            ? `Page "${slug}" permanently deleted.`
+            : `Page "${slug}" archived.`,
       );
     } catch (err) {
       console.error(err);

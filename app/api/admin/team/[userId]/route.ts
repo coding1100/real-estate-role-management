@@ -5,10 +5,13 @@ import { apiRequirePermission } from "@/lib/apiAuth";
 import { PERMISSIONS } from "@/lib/permissions";
 import {
   TeamValidationError,
-  assertNotLastTenantAdmin,
+  assertTeamMemberRemovable,
+  assertTeamMemberUpdateAllowed,
   assertCanManageTeam,
+  resolveMembershipIsTenantAdmin,
   validateTeamCreate,
   type CreateTeamMemberInput,
+  type ProposedTeamMembership,
 } from "@/lib/team";
 
 type RouteContext = { params: Promise<{ userId: string }> };
@@ -101,7 +104,29 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       input.assignments = rows as CreateTeamMemberInput["assignments"];
     }
 
+    const proposed: ProposedTeamMembership = {
+      allDomains: nextAllDomains,
+      allDomainsRoleId: nextAllDomains ? nextRoleId : null,
+      assignmentRoleIds: nextAllDomains
+        ? []
+        : (input.assignments ?? []).map((a) => a.roleId),
+    };
+
+    try {
+      await assertTeamMemberUpdateAllowed(auth.tenantId, userId, proposed);
+    } catch (e) {
+      if (e instanceof TeamValidationError) {
+        return NextResponse.json({ error: e.message }, { status: e.status });
+      }
+      throw e;
+    }
+
     await validateTeamCreate(auth, input);
+
+    const isTenantAdmin = await resolveMembershipIsTenantAdmin(
+      auth.tenantId,
+      proposed,
+    );
 
     await prisma.tenantUserDomainAccess.deleteMany({
       where: { tenantId: auth.tenantId, userId },
@@ -111,12 +136,11 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       where: { id: membership.id },
       data: {
         allDomainsRoleId: nextAllDomains ? nextRoleId : null,
+        isTenantAdmin,
         domainAccess: nextAllDomains
           ? undefined
           : {
               create: (input.assignments ?? []).map((a) => ({
-                tenantId: auth.tenantId,
-                userId,
                 domainId: a.domainId,
                 roleId: a.roleId,
               })),
@@ -166,7 +190,7 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   }
 
   try {
-    await assertNotLastTenantAdmin(auth.tenantId, userId);
+    await assertTeamMemberRemovable(auth.tenantId, userId);
   } catch (e) {
     if (e instanceof TeamValidationError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

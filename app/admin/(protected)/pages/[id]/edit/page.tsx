@@ -84,7 +84,7 @@ export default async function EditPage({ params }: EditPageProps) {
     pageStatus === "draft" &&
     !can(ctx, PERMISSIONS.PAGES_EDIT_CONTENT, { domainId, pageStatus })
   ) {
-    redirect("/admin/pages-2");
+    redirect("/admin/pages-2?denied=edit");
   }
 
   const readOnly =

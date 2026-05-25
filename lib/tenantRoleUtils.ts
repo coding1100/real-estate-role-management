@@ -13,6 +13,13 @@ export const BUILT_IN_ROLE_KEYS = [
 
 export type BuiltInRoleKey = (typeof BUILT_IN_ROLE_KEYS)[number];
 
+/** Built-in Admin role is locked; other built-ins and custom roles are mutable. */
+export function isProtectedBuiltInRole(
+  builtInKey: string | null | undefined,
+): boolean {
+  return builtInKey === "admin";
+}
+
 const TENANT_ADMIN_EXTRA: Permission[] = [
   PERMISSIONS.TENANT_ROLES_LIST,
   PERMISSIONS.TENANT_ROLES_CREATE,

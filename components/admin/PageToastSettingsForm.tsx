@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { HexAlphaColorField } from "@/components/admin/HexAlphaColorField";
+import { useAdminToast } from "@/components/admin/useAdminToast";
 
 export type PageToastThemeOverride = {
   position: "top-right" | "top-left" | "top-center" | "bottom-right" | "bottom-left" | "bottom-center";
@@ -67,7 +68,15 @@ export function PageToastSettingsForm({
 
   function handleSave() {
     startTransition(async () => {
-      await onSave(enabled ? value : null);
+      try {
+        await onSave(enabled ? value : null);
+      } catch (err) {
+        const msg =
+          err instanceof Error && err.message.trim()
+            ? err.message
+            : "Failed to save local toast settings.";
+        showError("Unable to save", msg);
+      }
     });
   }
 

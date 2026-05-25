@@ -1,3 +1,4 @@
+import { permissionDeniedMessage } from "@/lib/apiMessages";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/permissions";
 import {
@@ -11,6 +12,7 @@ import { getAccessibleDomainIds } from "@/lib/authorization";
 import type { Permission } from "@/lib/permissions";
 import {
   canAssignPermissions,
+  isProtectedBuiltInRole,
   isValidPermission,
   roleRankFromBuiltInKey,
   type BuiltInRoleKey,
@@ -42,7 +44,10 @@ export class TeamValidationError extends Error {
 
 export async function assertCanManageTeam(ctx: AuthContext): Promise<void> {
   if (!can(ctx, PERMISSIONS.TEAM_CREATE)) {
-    throw new TeamValidationError(403, "Forbidden");
+    throw new TeamValidationError(
+      403,
+      permissionDeniedMessage(PERMISSIONS.TEAM_CREATE),
+    );
   }
 }
 
@@ -61,7 +66,7 @@ async function assertCanAssignRole(
     throw new TeamValidationError(400, "Invalid role for this tenant.");
   }
 
-  if (ctx.isPlatformAdmin) return;
+  if (ctx.isPlatformAdmin || ctx.isTenantAdmin) return;
 
   const callerPerms = getEffectivePermissionUnion(ctx);
   const targetPerms = role.permissions.filter((p): p is Permission =>
@@ -70,7 +75,7 @@ async function assertCanAssignRole(
   if (!canAssignPermissions(callerPerms, targetPerms)) {
     throw new TeamValidationError(
       403,
-      "Cannot assign a role with permissions you do not have.",
+      "Permission denied. You cannot assign a role with permissions you do not have.",
     );
   }
 
@@ -123,30 +128,108 @@ export async function validateTeamCreate(
   }
 }
 
+/** True when the member is assigned the built-in Admin role (not custom roles). */
+export function memberHasAdminRole(m: {
+  allDomainsRole: { builtInKey: string | null; slug: string } | null;
+  domainAccess: { role: { builtInKey: string | null; slug: string } }[];
+}): boolean {
+  if (isProtectedBuiltInRole(m.allDomainsRole?.builtInKey)) return true;
+  return m.domainAccess.some((a) =>
+    isProtectedBuiltInRole(a.role.builtInKey),
+  );
+}
+
+/** @deprecated Use memberHasAdminRole */
+export function isProtectedTeamMember(m: {
+  isTenantAdmin?: boolean;
+  allDomainsRole: { builtInKey: string | null; slug: string } | null;
+  domainAccess: { role: { builtInKey: string | null; slug: string } }[];
+}): boolean {
+  return memberHasAdminRole(m);
+}
+
+export type ProposedTeamMembership = {
+  allDomains: boolean;
+  allDomainsRoleId: string | null;
+  assignmentRoleIds: string[];
+};
+
+async function proposedRolesIncludeAdmin(
+  tenantId: string,
+  proposed: ProposedTeamMembership,
+): Promise<boolean> {
+  const roleIds = proposed.allDomains
+    ? proposed.allDomainsRoleId
+      ? [proposed.allDomainsRoleId]
+      : []
+    : proposed.assignmentRoleIds;
+  if (roleIds.length === 0) return false;
+  const roles = await prisma.tenantRole.findMany({
+    where: { tenantId, id: { in: roleIds } },
+    select: { builtInKey: true },
+  });
+  return roles.some((r) => isProtectedBuiltInRole(r.builtInKey));
+}
+
+async function loadMembershipForTeamGuard(tenantId: string, userId: string) {
+  const membership = await prisma.tenantMembership.findUnique({
+    where: { tenantId_userId: { tenantId, userId } },
+    include: {
+      allDomainsRole: { select: { builtInKey: true, slug: true } },
+      domainAccess: {
+        include: { role: { select: { builtInKey: true, slug: true } } },
+      },
+    },
+  });
+  if (!membership) {
+    throw new TeamValidationError(404, "User not found.");
+  }
+  return membership;
+}
+
+export async function assertTeamMemberRemovable(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const membership = await loadMembershipForTeamGuard(tenantId, userId);
+  if (memberHasAdminRole(membership)) {
+    throw new TeamValidationError(
+      400,
+      "Members with the Admin role cannot be removed.",
+    );
+  }
+}
+
+export async function assertTeamMemberUpdateAllowed(
+  tenantId: string,
+  userId: string,
+  proposed: ProposedTeamMembership,
+): Promise<void> {
+  const membership = await loadMembershipForTeamGuard(tenantId, userId);
+  const currentlyAdmin = memberHasAdminRole(membership);
+  const nextAdmin = await proposedRolesIncludeAdmin(tenantId, proposed);
+
+  if (currentlyAdmin && nextAdmin) {
+    throw new TeamValidationError(
+      400,
+      "This member has the Admin role. Choose a non-Admin role to change their access, or leave Admin unchanged.",
+    );
+  }
+}
+
+export async function resolveMembershipIsTenantAdmin(
+  tenantId: string,
+  proposed: ProposedTeamMembership,
+): Promise<boolean> {
+  return proposedRolesIncludeAdmin(tenantId, proposed);
+}
+
+/** @deprecated Use assertTeamMemberRemovable */
 export async function assertNotLastTenantAdmin(
   tenantId: string,
   userId: string,
 ): Promise<void> {
-  const membership = await prisma.tenantMembership.findUnique({
-    where: { tenantId_userId: { tenantId, userId } },
-    include: { allDomainsRole: true },
-  });
-  if (!membership?.allDomainsRole?.builtInKey || membership.allDomainsRole.builtInKey !== "admin") {
-    return;
-  }
-
-  const count = await prisma.tenantMembership.count({
-    where: {
-      tenantId,
-      allDomainsRole: { builtInKey: "admin" },
-    },
-  });
-  if (count <= 1) {
-    throw new TeamValidationError(
-      400,
-      "Cannot remove the last tenant admin.",
-    );
-  }
+  await assertTeamMemberRemovable(tenantId, userId);
 }
 
 export async function migrateLegacyUsersToTenant(

@@ -65,9 +65,9 @@ const navItems: {
   { href: "/admin/domains", label: "Domains", icon: Globe2, permission: PERMISSIONS.DOMAIN_LIST },
   { href: "/admin/pages-2", label: "Landing Pages", icon: FileText },
   { href: "/admin/pages-2/archived", label: "Archived Pages", icon: Recycle, permission: PERMISSIONS.PAGES_LIST_ARCHIVED },
-  { href: "/admin/leads", label: "Leads", icon: Inbox, permission: PERMISSIONS.LEADS_LIST },
+  // { href: "/admin/leads", label: "Leads", icon: Inbox, permission: PERMISSIONS.LEADS_LIST },
   { href: "/admin/templates", label: "Templates", icon: Layers, permission: PERMISSIONS.TEMPLATES_LIST },
-  { href: "/admin/webhooks", label: "Webhooks", icon: RadioTower, permission: PERMISSIONS.WEBHOOKS_LIST },
+  // { href: "/admin/webhooks", label: "Webhooks", icon: RadioTower, permission: PERMISSIONS.WEBHOOKS_LIST },
   { href: "/admin/team", label: "Team", icon: Users, permission: PERMISSIONS.TEAM_LIST },
   { href: "/admin/roles", label: "Roles", icon: Shield, permission: PERMISSIONS.TENANT_ROLES_LIST },
   { href: "/admin/settings", label: "Settings", icon: Settings, permission: PERMISSIONS.SETTINGS_GLOBAL_READ },
@@ -81,6 +81,17 @@ export function AdminShell({
 }: AdminShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(false);
+  const [loggingOut, setLoggingOut] = React.useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await signOut({ redirect: false });
+    } finally {
+      window.location.replace("/admin/login");
+    }
+  }
   const canDashboard = useCan(PERMISSIONS.DASHBOARD_VIEW);
   const canDomains = useCan(PERMISSIONS.DOMAIN_LIST);
   const canListAllPages = useCan(PERMISSIONS.PAGES_LIST_ALL);
@@ -133,15 +144,12 @@ export function AdminShell({
             </div>
             <button
               type="button"
-              onClick={() =>
-                signOut({
-                  callbackUrl: "/admin/login",
-                })
-              }
-              className="inline-flex items-center justify-center gap-1.5 !rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 shadow-sm hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              onClick={() => void handleLogout()}
+              disabled={loggingOut}
+              className="inline-flex items-center justify-center gap-1.5 !rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 shadow-sm hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:opacity-60"
             >
               <LogOut className="h-3.5 w-3.5" />
-              <span>Logout</span>
+              <span>{loggingOut ? "Signing out…" : "Sign out"}</span>
             </button>
           </div>
         </div>

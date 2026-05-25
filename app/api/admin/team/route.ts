@@ -6,6 +6,8 @@ import { PERMISSIONS } from "@/lib/permissions";
 import {
   CreateTeamMemberInput,
   TeamValidationError,
+  memberHasAdminRole,
+  resolveMembershipIsTenantAdmin,
   validateTeamCreate,
 } from "@/lib/team";
 
@@ -19,12 +21,13 @@ function serializeMember(m: {
     name: string;
     slug: string;
     builtInKey: string | null;
+    isBuiltIn: boolean;
   } | null;
   domainAccess: {
     domainId: string;
     roleId: string;
     domain: { hostname: string };
-    role: { id: string; name: string; slug: string };
+    role: { id: string; name: string; slug: string; isBuiltIn: boolean };
   }[];
 }) {
   return {
@@ -37,12 +40,18 @@ function serializeMember(m: {
     allDomains: !!m.allDomainsRole,
     roleId: m.allDomainsRole?.id ?? null,
     roleName: m.allDomainsRole?.name ?? null,
+    roleIsBuiltIn: m.allDomainsRole?.isBuiltIn ?? null,
     assignments: m.domainAccess.map((a) => ({
       domainId: a.domainId,
       roleId: a.roleId,
       roleName: a.role.name,
+      roleIsBuiltIn: a.role.isBuiltIn,
       hostname: a.domain.hostname,
     })),
+    isProtected: memberHasAdminRole({
+      allDomainsRole: m.allDomainsRole,
+      domainAccess: m.domainAccess.map((a) => ({ role: a.role })),
+    }),
   };
 }
 
@@ -50,23 +59,31 @@ export async function GET() {
   const auth = await apiRequirePermission(PERMISSIONS.TEAM_LIST);
   if (auth instanceof NextResponse) return auth;
 
-  const members = await prisma.tenantMembership.findMany({
-    where: { tenantId: auth.tenantId },
-    orderBy: { createdAt: "asc" },
-    include: {
-      user: true,
-      allDomainsRole: true,
-      domainAccess: {
-        include: {
-          domain: { select: { hostname: true } },
-          role: { select: { id: true, name: true, slug: true } },
+  const [members, roles] = await Promise.all([
+    prisma.tenantMembership.findMany({
+      where: { tenantId: auth.tenantId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        user: true,
+        allDomainsRole: true,
+        domainAccess: {
+          include: {
+            domain: { select: { hostname: true } },
+            role: { select: { id: true, name: true, slug: true } },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.tenantRole.findMany({
+      where: { tenantId: auth.tenantId },
+      orderBy: [{ isBuiltIn: "desc" }, { name: "asc" }],
+      select: { id: true, name: true, slug: true, isBuiltIn: true },
+    }),
+  ]);
 
   return NextResponse.json({
     users: members.map(serializeMember),
+    roles,
   });
 }
 
@@ -143,18 +160,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const isTenantAdmin = await resolveMembershipIsTenantAdmin(auth.tenantId, {
+    allDomains,
+    allDomainsRoleId: allDomains ? roleId : null,
+    assignmentRoleIds: allDomains
+      ? []
+      : (input.assignments ?? []).map((a) => a.roleId),
+  });
+
   const membership = await prisma.tenantMembership.create({
     data: {
       tenantId: auth.tenantId,
       userId: user.id,
       allDomainsRoleId: allDomains ? roleId : null,
-      isTenantAdmin: false,
+      isTenantAdmin,
       domainAccess: allDomains
         ? undefined
         : {
             create: (input.assignments ?? []).map((a) => ({
-              tenantId: auth.tenantId,
-              userId: user!.id,
               domainId: a.domainId,
               roleId: a.roleId,
             })),

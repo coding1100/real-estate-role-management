@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiRequireAuth, jsonForbidden } from "@/lib/apiAuth";
+import { API_ERROR_CODES } from "@/lib/apiMessages";
 import { AuthError } from "@/lib/authorization";
 import { assertPagePatchAllowed } from "@/lib/pagePatchAuth";
 import { can } from "@/lib/authorization";
@@ -369,7 +370,17 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     });
   } catch (e) {
     if (e instanceof AuthError) {
-      return NextResponse.json({ error: e.message }, { status: e.status });
+      return NextResponse.json(
+        {
+          error: e.message,
+          ...(e.status === 403
+            ? { code: API_ERROR_CODES.PERMISSION_DENIED }
+            : e.status === 401
+              ? { code: API_ERROR_CODES.UNAUTHORIZED }
+              : {}),
+        },
+        { status: e.status },
+      );
     }
     throw e;
   }

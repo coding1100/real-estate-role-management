@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiRequirePermission } from "@/lib/apiAuth";
+import { apiRequirePermission, jsonForbidden } from "@/lib/apiAuth";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getEffectivePermissionUnion } from "@/lib/authorization";
 import {
   canAssignPermissions,
+  isProtectedBuiltInRole,
   normalizeRoleSlug,
   sanitizePermissions,
 } from "@/lib/tenantRoleUtils";
@@ -21,6 +22,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   });
   if (!existing) {
     return NextResponse.json({ error: "Role not found." }, { status: 404 });
+  }
+  if (isProtectedBuiltInRole(existing.builtInKey)) {
+    return NextResponse.json(
+      { error: "Admin role cannot be edited." },
+      { status: 400 },
+    );
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -47,27 +54,19 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     }
     if (
       !auth.isPlatformAdmin &&
+      !auth.isTenantAdmin &&
       !canAssignPermissions(getEffectivePermissionUnion(auth), permissions)
     ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return jsonForbidden(PERMISSIONS.TENANT_ROLES_UPDATE);
     }
     data.permissions = permissions;
   }
   if (typeof body.slug === "string" && body.slug.trim() && !existing.isBuiltIn) {
     data.slug = normalizeRoleSlug(body.slug);
   }
-
   if (existing.isBuiltIn) {
     delete data.slug;
-    if (data.name && existing.builtInKey) {
-      const labels: Record<string, string> = {
-        admin: "Admin",
-        executive: "Executive",
-        member: "Member",
-        explorer: "Explorer",
-      };
-      data.name = labels[existing.builtInKey] ?? data.name;
-    }
+    delete data.name;
   }
 
   const role = await prisma.tenantRole.update({
@@ -99,9 +98,9 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   if (!existing) {
     return NextResponse.json({ error: "Role not found." }, { status: 404 });
   }
-  if (existing.isBuiltIn) {
+  if (isProtectedBuiltInRole(existing.builtInKey)) {
     return NextResponse.json(
-      { error: "Built-in roles cannot be deleted." },
+      { error: "Admin role cannot be deleted." },
       { status: 400 },
     );
   }

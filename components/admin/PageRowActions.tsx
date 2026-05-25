@@ -11,14 +11,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoreVertical, Eye, Pencil, Copy, Link as LinkIcon } from "lucide-react";
 import { DeletePageButton } from "@/components/admin/DeletePageButton";
+import { useCan } from "@/components/admin/AuthContext";
 import { useAdminToast } from "@/components/admin/useAdminToast";
 import { buildCustomerSiteUrl } from "@/lib/customerSiteUrl";
+import { PERMISSIONS } from "@/lib/permissions";
 
 interface PageRowActionsProps {
   pageId: string;
   slug: string;
   canonicalUrl?: string | null;
   status?: string;
+  domainId?: string;
   domainHostname?: string;
   isMaster: boolean;
   isDeleted?: boolean;
@@ -35,6 +38,7 @@ export function PageRowActions({
   slug,
   canonicalUrl,
   status,
+  domainId,
   domainHostname,
   isMaster,
   isDeleted = false,
@@ -57,11 +61,18 @@ export function PageRowActions({
   const [busyAction, setBusyAction] = useState<
     null | "duplicate" | "toggle-status" | "copy-link"
   >(null);
-  const { success, error } = useAdminToast();
+  const { success, error, apiErrorFromResponse } = useAdminToast();
   const draftPreviewHref = `/${encodeURIComponent(slug)}?preview=1${
     domainHostname ? `&domain=${encodeURIComponent(domainHostname)}` : ""
   }`;
   const isPublished = (status ?? "").toLowerCase() === "published";
+  const pageStatus = isPublished ? "published" : "draft";
+  const canEditContent = useCan(PERMISSIONS.PAGES_EDIT_CONTENT, {
+    ...(domainId ? { domainId } : {}),
+    pageStatus,
+  });
+  const editorHref = `/admin/pages/${pageId}/edit`;
+  const editorLabel = canEditContent ? "Edit" : "View (read-only)";
   const canonicalPath = (() => {
     const value = String(canonicalUrl ?? "").trim();
     if (!value) return null;
@@ -223,11 +234,11 @@ export function PageRowActions({
                   <span>{viewLabel}</span>
                 </a>
                 <Link
-                  href={`/admin/pages/${pageId}/edit`}
+                  href={editorHref}
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-zinc-700 hover:bg-zinc-50"
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  <span>Edit</span>
+                  <span>{editorLabel}</span>
                 </Link>
                 <button
                   type="button"
@@ -245,10 +256,11 @@ export function PageRowActions({
                         });
                         const data = await res.json().catch(() => null);
                         if (!res.ok) {
-                          const msg =
-                            (data && typeof data.error === "string" && data.error) ||
-                            `Failed to ${isPublished ? "unpublish" : "publish"} page.`;
-                          error(msg);
+                          await apiErrorFromResponse(
+                            res,
+                            data,
+                            `Failed to ${isPublished ? "unpublish" : "publish"} page.`,
+                          );
                           return;
                         }
                         router.refresh();
@@ -293,10 +305,11 @@ export function PageRowActions({
                         });
                         const data = await res.json().catch(() => null);
                         if (!res.ok) {
-                          const msg =
-                            (data && typeof data.error === "string" && data.error) ||
-                            "Failed to duplicate page.";
-                          error(msg);
+                          await apiErrorFromResponse(
+                            res,
+                            data,
+                            "Failed to duplicate page.",
+                          );
                           return;
                         }
                         router.refresh();

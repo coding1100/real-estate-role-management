@@ -12,7 +12,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
     "test:email": "tsx scripts/test-emails.tsx",
-    "test:lead-delivery": "tsx scripts/test-lead-delivery.ts"
+    "test:lead-delivery": "tsx scripts/test-lead-delivery.ts",
+    "test": "vitest run",
+    "test:role-team": "vitest run tests/role-team && tsx tests/role-team/write-report.ts",
+    "test:role-team:watch": "vitest tests/role-team"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^41.4.2",
@@ -80,6 +83,7 @@
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

@@ -79,7 +79,7 @@ export function Dialog({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="max-h-[calc(90vh-8rem)] overflow-y-auto px-6 py-4">
+        <div className="max-h-[calc(90vh-8rem)] overflow-y-auto py-4">
           {children}
         </div>
       </div>

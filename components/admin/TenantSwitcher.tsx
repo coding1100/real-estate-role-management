@@ -16,7 +16,7 @@ export function TenantSwitcher() {
     if (session?.user?.tenantName) {
       return (
         <span className="text-xs text-zinc-500 hidden sm:inline">
-          {session.user.tenantName}
+          {/* {session.user.tenantName} */}
         </span>
       );
     }
@@ -34,7 +34,7 @@ export function TenantSwitcher() {
           router.refresh();
         });
       }}
-      className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700"
+      className="!rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700"
       aria-label="Switch organization"
     >
       {tenants.map((t) => (

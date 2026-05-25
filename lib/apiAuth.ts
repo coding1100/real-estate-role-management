@@ -6,13 +6,27 @@ import {
   type AuthContext,
 } from "@/lib/authorization";
 import type { Permission } from "@/lib/permissions";
+import {
+  API_ERROR_CODES,
+  permissionDeniedMessage,
+  unauthorizedMessage,
+} from "@/lib/apiMessages";
 
 export function jsonUnauthorized() {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json(
+    { error: unauthorizedMessage(), code: API_ERROR_CODES.UNAUTHORIZED },
+    { status: 401 },
+  );
 }
 
-export function jsonForbidden() {
-  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+export function jsonForbidden(perm?: Permission) {
+  return NextResponse.json(
+    {
+      error: permissionDeniedMessage(perm),
+      code: API_ERROR_CODES.PERMISSION_DENIED,
+    },
+    { status: 403 },
+  );
 }
 
 export async function apiRequireAuth(): Promise<AuthContext | NextResponse> {
@@ -34,7 +48,7 @@ export async function apiRequirePermission(
     requireCapability(auth, perm, opts);
   } catch (e) {
     if (e instanceof AuthError && e.status === 403) {
-      return jsonForbidden();
+      return jsonForbidden(perm);
     }
     throw e;
   }
@@ -44,7 +58,15 @@ export async function apiRequirePermission(
 export function handleAuthError(e: unknown): NextResponse | null {
   if (e instanceof AuthError) {
     return NextResponse.json(
-      { error: e.message },
+      {
+        error: e.message,
+        code:
+          e.status === 403
+            ? API_ERROR_CODES.PERMISSION_DENIED
+            : e.status === 401
+              ? API_ERROR_CODES.UNAUTHORIZED
+              : undefined,
+      },
       { status: e.status },
     );
   }

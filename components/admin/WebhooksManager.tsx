@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAdminToast } from "@/components/admin/useAdminToast";
 
 interface WebhookRow {
   id: string;
@@ -19,7 +20,7 @@ export function WebhooksManager({
 }: WebhooksManagerProps) {
   const [hooks, setHooks] = useState<WebhookRow[]>(initialWebhooks);
   const [savingId, setSavingId] = useState<string | "new" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { apiErrorFromResponse } = useAdminToast();
   const [isPending, startTransition] = useTransition();
 
   function updateHook(id: string, patch: Partial<WebhookRow>) {
@@ -43,7 +44,6 @@ export function WebhooksManager({
   }
 
   async function saveHook(hook: WebhookRow) {
-    setError(null);
     setSavingId(hook.id || "new");
     startTransition(async () => {
       try {
@@ -57,8 +57,15 @@ export function WebhooksManager({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(hook),
         });
-        if (!res.ok) throw new Error("Failed to save webhook");
-        const data = (await res.json()) as { webhook: WebhookRow };
+        const data = (await res.json().catch(() => ({}))) as {
+          webhook?: WebhookRow;
+          error?: string;
+        };
+        if (!res.ok) {
+          await apiErrorFromResponse(res, data, "Could not save webhook.");
+          return;
+        }
+        if (!data.webhook) return;
         setHooks((prev) => {
           if (isNew) {
             return prev
@@ -69,9 +76,8 @@ export function WebhooksManager({
             h.id === hook.id ? data.webhook : h,
           );
         });
-      } catch (e: any) {
+      } catch (e) {
         console.error(e);
-        setError(e.message ?? "Failed to save webhook");
       } finally {
         setSavingId(null);
       }
@@ -80,18 +86,20 @@ export function WebhooksManager({
 
   async function deleteHook(id: string) {
     if (!confirm("Delete this webhook?")) return;
-    setError(null);
     setSavingId(id);
     startTransition(async () => {
       try {
         const res = await fetch(`/api/admin/webhooks/${id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Failed to delete webhook");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          await apiErrorFromResponse(res, data, "Could not delete webhook.");
+          return;
+        }
         setHooks((prev) => prev.filter((h) => h.id !== id));
-      } catch (e: any) {
+      } catch (e) {
         console.error(e);
-        setError(e.message ?? "Failed to delete webhook");
       } finally {
         setSavingId(null);
       }
@@ -112,11 +120,6 @@ export function WebhooksManager({
           + Add webhook
         </button>
       </div>
-      {error && (
-        <p className="text-md text-red-500">
-          {error}
-        </p>
-      )}
       <div className="max-[768px]:overflow-x-auto max-[768px]:-mx-2">
         <table className="min-w-full overflow-hidden rounded-lg bg-white text-md shadow-sm max-[768px]:min-w-[600px]">
         <thead className="bg-zinc-50 text-[16px] uppercase tracking-[0.15em] text-zinc-500">

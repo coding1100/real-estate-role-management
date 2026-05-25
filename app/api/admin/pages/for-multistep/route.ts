@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiRequirePermission } from "@/lib/apiAuth";
+import { apiRequirePermission, jsonForbidden } from "@/lib/apiAuth";
 import { getAccessibleDomainIds } from "@/lib/authorization";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
   const accessible = await getAccessibleDomainIds(auth);
   if (!accessible.includes(domainId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return jsonForbidden(PERMISSIONS.PAGES_MULTISTEP_PICKER);
   }
 
   try {

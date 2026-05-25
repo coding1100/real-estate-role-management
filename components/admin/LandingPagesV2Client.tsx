@@ -43,6 +43,7 @@ import { useAdminToast } from "@/components/admin/useAdminToast";
 import type { PageListItem } from "@/components/admin/pageListTypes";
 import { getPageCategoryLabel } from "@/lib/admin/pageCategoryLabel";
 import { useCan } from "@/components/admin/AuthContext";
+import { permissionDeniedMessage } from "@/lib/apiMessages";
 import { PERMISSIONS } from "@/lib/permissions";
 
 type Props = {
@@ -357,6 +358,7 @@ function SortableLandingPageRow({
                   slug={page.slug}
                   canonicalUrl={page.canonicalUrl}
                   status={page.status}
+                  domainId={page.domainId}
                   domainHostname={page.domainHostname}
                   isMaster={isMaster}
                   isDeleted={isDeleted}
@@ -414,9 +416,23 @@ export function LandingPagesV2Client({
   const [notesError, setNotesError] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<PageListItem[]>(initialPages);
-  const { success, error } = useAdminToast();
+  const { success, error, apiErrorFromResponse } = useAdminToast();
 
   rowsRef.current = rows;
+
+  const deniedEdit = searchParams.get("denied");
+  useEffect(() => {
+    if (deniedEdit !== "edit") return;
+    error(
+      "Permission denied",
+      permissionDeniedMessage(PERMISSIONS.PAGES_EDIT_CONTENT),
+    );
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("denied");
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast once per ?denied=edit
+  }, [deniedEdit, pathname, router]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -595,7 +611,7 @@ export function LandingPagesV2Client({
           (data && typeof data.error === "string" && data.error) ||
           "Failed to save notes.";
         setNotesError(msg);
-        error(msg);
+        await apiErrorFromResponse(res, data, "Failed to save notes.");
         setNotesSaving(false);
         return;
       }

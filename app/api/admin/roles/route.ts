@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiRequirePermission } from "@/lib/apiAuth";
+import { apiRequirePermission, jsonForbidden } from "@/lib/apiAuth";
+import { API_ERROR_CODES } from "@/lib/apiMessages";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getEffectivePermissionUnion } from "@/lib/authorization";
 import {
@@ -72,10 +73,15 @@ export async function POST(req: NextRequest) {
 
   if (
     !auth.isPlatformAdmin &&
+    !auth.isTenantAdmin &&
     !canAssignPermissions(getEffectivePermissionUnion(auth), permissions)
   ) {
     return NextResponse.json(
-      { error: "Cannot grant permissions you do not have." },
+      {
+        error:
+          "Permission denied. You cannot grant permissions you do not have.",
+        code: API_ERROR_CODES.PERMISSION_DENIED,
+      },
       { status: 403 },
     );
   }

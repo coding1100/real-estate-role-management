@@ -385,6 +385,7 @@ function PagesTableRowBody({
         slug={page.slug}
         canonicalUrl={page.canonicalUrl}
         status={page.status}
+        domainId={page.domainId}
         domainHostname={page.domainHostname}
         isMaster={isMaster}
         isFixedDefaultHomepage={page.isFixedDefaultHomepage}

@@ -1,3 +1,4 @@
+import { permissionDeniedMessage } from "@/lib/apiMessages";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { permissionsInclude, roleRankFromBuiltInKey } from "@/lib/tenantRoleUtils";
 
@@ -120,7 +121,7 @@ export function requireCapability(
   },
 ): void {
   if (!can(ctx, perm, opts)) {
-    throw new AuthError(403, "Forbidden");
+    throw new AuthError(403, permissionDeniedMessage(perm));
   }
 }
 

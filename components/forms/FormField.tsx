@@ -79,7 +79,7 @@ export function FormField({ field, register, errors, formStyle = "default" }: Fo
   const baseClass =
     formStyle === "detailed-perspective"
       ? "block w-full !rounded-md border border-zinc-300 px-3 py-2.5 text-md shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 font-serif bg-white"
-      : "block w-full rounded-md border border-zinc-300 px-3 py-2 text-md shadow-sm text-[#453d3d] focus:outline-none focus:ring-1 focus:ring-zinc-900 font-serif";
+      : "block w-full !rounded-md border border-zinc-300 px-3 py-2 text-md shadow-sm text-[#453d3d] focus:outline-none focus:ring-1 focus:ring-zinc-900 font-serif";
   const labelClass = "block text-md font-medium text-zinc-800 font-serif";
 
   const radioCheckClass =

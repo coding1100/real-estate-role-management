@@ -1,0 +1,342 @@
+ROLE & TEAM MANAGEMENT — SCENARIO TEST REPORT
+============================================================
+Generated: 2026-05-22T12:25:28.467Z
+Total scenarios: 65
+Passed: 65
+Failed: 0
+Pass rate: 100.0%
+
+## Roles
+----------------------------------------
+[PASS] ROLE-001-explorer — explorer permissionsForBuiltIn matches ROLE_PERMISSIONS
+  Actor: explorer
+  Expected: sets are identical
+  Actual: ok
+
+[PASS] ROLE-001-member — member permissionsForBuiltIn matches ROLE_PERMISSIONS
+  Actor: member
+  Expected: sets are identical
+  Actual: ok
+
+[PASS] ROLE-001-executive — executive permissionsForBuiltIn matches ROLE_PERMISSIONS
+  Actor: executive
+  Expected: sets are identical
+  Actual: ok
+
+[PASS] ROLE-001-admin — admin permissionsForBuiltIn matches ROLE_PERMISSIONS
+  Actor: admin
+  Expected: admin includes tenant role extras
+  Actual: ok
+
+[PASS] RANK-001 — Built-in role ranks increase correctly
+  Actor: system
+  Expected: strict ascending ranks
+  Actual: ordered
+
+[PASS] RANK-002 — explorer may assign member role (legacy canAssignRole)
+  Actor: explorer
+  Expected: denied
+  Actual: denied
+
+[PASS] RANK-003 — member may assign executive role (legacy canAssignRole)
+  Actor: member
+  Expected: denied
+  Actual: denied
+
+[PASS] RANK-004 — member may assign explorer role (legacy canAssignRole)
+  Actor: member
+  Expected: allowed
+  Actual: allowed
+
+[PASS] RANK-005 — executive may assign member role (legacy canAssignRole)
+  Actor: executive
+  Expected: allowed
+  Actual: allowed
+
+[PASS] RANK-006 — executive may assign admin role (legacy canAssignRole)
+  Actor: executive
+  Expected: denied
+  Actual: denied
+
+[PASS] RANK-007 — admin may assign executive role (legacy canAssignRole)
+  Actor: admin
+  Expected: allowed
+  Actual: allowed
+
+[PASS] RANK-008 — Member cannot assign executive-level built-in role
+  Actor: member
+  Expected: target rank > caller rank
+  Actual: blocked
+
+[PASS] LEGACY-001-explorer-pages:edit_content — explorer roleHasPermission(pages:edit_content) === can()
+  Actor: explorer
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-explorer-team:create — explorer roleHasPermission(team:create) === can()
+  Actor: explorer
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-explorer-webhooks:list — explorer roleHasPermission(webhooks:list) === can()
+  Actor: explorer
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-member-pages:edit_content — member roleHasPermission(pages:edit_content) === can()
+  Actor: member
+  Expected: true
+  Actual: legacy=true can=true
+
+[PASS] LEGACY-001-member-team:create — member roleHasPermission(team:create) === can()
+  Actor: member
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-member-webhooks:list — member roleHasPermission(webhooks:list) === can()
+  Actor: member
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-executive-pages:edit_content — executive roleHasPermission(pages:edit_content) === can()
+  Actor: executive
+  Expected: true
+  Actual: legacy=true can=true
+
+[PASS] LEGACY-001-executive-team:create — executive roleHasPermission(team:create) === can()
+  Actor: executive
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-executive-webhooks:list — executive roleHasPermission(webhooks:list) === can()
+  Actor: executive
+  Expected: false
+  Actual: legacy=false can=false
+
+[PASS] LEGACY-001-admin-pages:edit_content — admin roleHasPermission(pages:edit_content) === can()
+  Actor: admin
+  Expected: true
+  Actual: legacy=true can=true
+
+[PASS] LEGACY-001-admin-team:create — admin roleHasPermission(team:create) === can()
+  Actor: admin
+  Expected: true
+  Actual: legacy=true can=true
+
+[PASS] LEGACY-001-admin-webhooks:list — admin roleHasPermission(webhooks:list) === can()
+  Actor: admin
+  Expected: true
+  Actual: legacy=true can=true
+
+## Pages
+----------------------------------------
+[PASS] PAGE-001 — explorer pages:edit_content (published)
+  Actor: explorer
+  Expected: denied
+  Actual: denied
+
+[PASS] PAGE-002 — explorer pages:publish (published)
+  Actor: explorer
+  Expected: denied
+  Actual: denied
+
+[PASS] PAGE-003 — explorer pages:view_live (published)
+  Actor: explorer
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PAGE-004 — member pages:edit_content (published)
+  Actor: member
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PAGE-005 — member pages:publish (published)
+  Actor: member
+  Expected: denied
+  Actual: denied
+
+[PASS] PAGE-006 — member pages:edit_content (draft)
+  Actor: member
+  Expected: denied
+  Actual: denied
+
+[PASS] PAGE-007 — executive pages:publish (draft)
+  Actor: executive
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PAGE-008 — executive pages:create (published)
+  Actor: executive
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PAGE-009 — admin tenant:roles:create (published)
+  Actor: admin
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PATCH-001 — Explorer blocked from editing published content
+  Actor: explorer
+  Expected: 403 denied
+  Actual: You do not have permission to edit page content.
+
+[PASS] PATCH-002 — Member can edit published content
+  Actor: member
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PATCH-003 — Member cannot set status published
+  Actor: member
+  Expected: 403 denied
+  Actual: denied
+
+[PASS] PATCH-004 — Executive can publish draft page
+  Actor: executive
+  Expected: allowed
+  Actual: allowed
+
+[PASS] PATCH-005 — Explorer blocked from any draft PATCH
+  Actor: explorer
+  Expected: 403 denied
+  Actual: denied
+
+## Team
+----------------------------------------
+[PASS] TEAM-001 — explorer can team:list
+  Actor: explorer
+  Expected: denied
+  Actual: denied
+
+[PASS] TEAM-002 — explorer can team:create
+  Actor: explorer
+  Expected: denied
+  Actual: denied
+
+[PASS] TEAM-003 — member can team:create
+  Actor: member
+  Expected: denied
+  Actual: denied
+
+[PASS] TEAM-004 — member can team:update
+  Actor: member
+  Expected: denied
+  Actual: denied
+
+[PASS] TEAM-005 — executive can team:create
+  Actor: executive
+  Expected: denied
+  Actual: denied
+
+[PASS] TEAM-006 — executive can tenant:roles:list
+  Actor: executive
+  Expected: denied
+  Actual: denied
+
+[PASS] TEAM-007 — admin can team:list
+  Actor: admin
+  Expected: allowed
+  Actual: allowed
+
+[PASS] TEAM-008 — admin can team:create
+  Actor: admin
+  Expected: allowed
+  Actual: allowed
+
+[PASS] TEAM-009 — admin can tenant:roles:create
+  Actor: admin
+  Expected: allowed
+  Actual: allowed
+
+[PASS] TEAM-010 — Executive with isTenantAdmin has tenant admin access
+  Actor: executive (tenant admin)
+  Expected: hasTenantAdminAccess true
+  Actual: true
+
+[PASS] ADMIN-001 — isProtectedBuiltInRole only locks admin
+  Actor: system
+  Expected: admin protected, executive not
+  Actual: correct
+
+[PASS] ADMIN-002 — Admin role member is protected
+  Actor: admin assignee
+  Expected: memberHasAdminRole true
+  Actual: protected
+
+[PASS] ADMIN-003 — Member role assignee is not protected
+  Actor: member assignee
+  Expected: memberHasAdminRole false
+  Actual: not protected
+
+[PASS] GUARD-001 — Admin member removal blocked
+  Actor: tenant admin
+  Expected: TeamValidationError 400
+  Actual: Members with the Admin role cannot be removed.
+
+[PASS] GUARD-002 — Member assignee can be removed
+  Actor: tenant admin
+  Expected: no error
+  Actual: allowed
+
+[PASS] GUARD-003 — Updating admin member while staying on Admin blocked
+  Actor: tenant admin
+  Expected: TeamValidationError 400
+  Actual: This member has the Admin role. Choose a non-Admin role to change their access, or leave Admin unchanged.
+
+[PASS] GUARD-004 — Demote admin to member allowed at guard layer
+  Actor: tenant admin
+  Expected: no error from assertTeamMemberUpdateAllowed
+  Actual: allowed
+
+[PASS] GUARD-005 — Explorer team member can be removed
+  Actor: tenant admin
+  Expected: removal allowed
+  Actual: allowed
+
+[PASS] GUARD-006 — Executive assignee can be removed
+  Actor: tenant admin
+  Expected: removal allowed
+  Actual: allowed
+
+## Custom roles
+----------------------------------------
+[PASS] CUSTOM-001 — View-only custom role denied edit content
+  Actor: custom (view only)
+  Expected: edit denied
+  Actual: denied
+
+[PASS] CUSTOM-002 — View-only custom role can view live
+  Actor: custom (view only)
+  Expected: view allowed
+  Actual: allowed
+
+[PASS] CUSTOM-003 — Executive cannot create role with team:create
+  Actor: executive
+  Expected: canAssignPermissions false
+  Actual: cannot grant
+
+[PASS] CUSTOM-004 — Admin can grant member page permissions to custom role
+  Actor: admin
+  Expected: canAssignPermissions true
+  Actual: can grant
+
+## Domains
+----------------------------------------
+[PASS] DOMAIN-001 — Executive publish on domain A
+  Actor: executive (domain A)
+  Expected: allowed
+  Actual: allowed
+
+[PASS] DOMAIN-002 — Executive publish on domain B
+  Actor: executive (domain B)
+  Expected: allowed
+  Actual: allowed
+
+[PASS] DOMAIN-003 — Explorer can view pages list (published)
+  Actor: explorer
+  Expected: canViewPageList true
+  Actual: allowed
+
+[PASS] DOMAIN-004 — Explorer cannot list all statuses
+  Actor: explorer
+  Expected: PAGES_LIST_ALL denied
+  Actual: denied
